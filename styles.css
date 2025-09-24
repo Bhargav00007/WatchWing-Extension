@@ -1,0 +1,69 @@
+/* styles.css */
+#sai-root {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2147483647;
+  font-family: Arial, sans-serif;
+}
+#sai-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+#sai-btn {
+  background: #0b76ff;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(11, 118, 255, 0.25);
+  cursor: pointer;
+  font-weight: 600;
+}
+#sai-chat {
+  width: 320px;
+  max-width: calc(100vw - 40px);
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  flex-direction: column;
+  gap: 8px;
+}
+#sai-response {
+  min-height: 40px;
+  max-height: 260px;
+  overflow: auto;
+  padding: 6px;
+  font-size: 13px;
+  color: #111;
+}
+#sai-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+#sai-input {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 13px;
+}
+#sai-send {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: #0b76ff;
+  color: white;
+  cursor: pointer;
+}
+#sai-close {
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: transparent;
+  cursor: pointer;
+}

@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Watchwing AI assistant",
+  "version": "1.0",
+  "description": "AI assistant that can answer questions about your current screen",
+  "permissions": ["activeTab", "scripting", "tabs", "desktopCapture"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Watchwing",
+    "default_popup": "popup.html"
+  }
+}
