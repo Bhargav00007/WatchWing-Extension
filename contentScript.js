@@ -367,11 +367,12 @@
     if (!loadingEl) return;
 
     const loadingSteps = [
-      "Capturing screen image...",
+      "Capturing screen ...",
       "Sending to AI for analysis...",
-      "Analyzing image content...",
+      "Analyzing screen content...",
       "Fetching AI insights...",
       "This may take a while...",
+      "Finalizing response...",
       "Finalizing response...",
     ];
 
@@ -505,7 +506,7 @@
       .replace(/<ul>(.*?)<\/ul>/gi, "$1")
       .replace(/<ol>(.*?)<\/ol>/gi, "$1")
       .replace(/<li>(.*?)<\/li>/gi, "• $1\n")
-      .replace(/<hr\s*\/?>/gi, "---\n")
+      .replace(/<hr\s*\/?>/gi, "-------------\n")
       .replace(/<[^>]*>/g, ""); // Remove any remaining HTML tags
 
     // Clean up multiple newlines
