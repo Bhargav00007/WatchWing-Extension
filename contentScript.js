@@ -84,6 +84,11 @@
       gap: 8px;
       color: #e6eef8;
       overflow: hidden;
+      position: fixed;
+      bottom: 52px;
+      right: 22px;
+      cursor: default;
+      user-select: none;
     }
 
     /* Header */
@@ -94,6 +99,10 @@
       gap: 8px;
       padding: 4px 6px;
       border-bottom: 1px solid rgba(255,255,255,0.02);
+      cursor: grab;
+    }
+    #sai-header:active {
+      cursor: grabbing;
     }
     #sai-title {
       font-weight:700;
@@ -121,6 +130,7 @@
       justify-content: center;
       padding: 8px;
       overflow: hidden;
+      cursor: default;
     }
 
     /* Response area */
@@ -134,6 +144,20 @@
       color: #dbeafe;
       font-size: 14px;
       line-height: 1.45;
+      cursor: auto;
+      user-select: text;
+    }
+
+    /* Welcome message */
+    .sai-welcome-message {
+      text-align: center;
+      color: #7dd3fc;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 20px;
+      opacity: 0.9;
+      cursor: default;
+      user-select: none;
     }
 
     /* Chat separators */
@@ -154,6 +178,8 @@
       gap: 10px;
       z-index: 10;
       text-align: center;
+      cursor: default;
+      user-select: none;
     }
     #sai-loading[aria-hidden="false"] { display:flex; }
 
@@ -181,6 +207,8 @@
       align-items: center;
       padding: 6px;
       border-top: 1px solid rgba(255,255,255,0.02);
+      cursor: default;
+      user-select: none;
     }
 
     #sai-input {
@@ -197,6 +225,8 @@
       line-height: 1.4;
       outline: none;
       overflow-y: auto;
+      cursor: text;
+      user-select: text;
     }
     #sai-input::placeholder { color: rgba(230,240,255,0.45); }
 
@@ -212,6 +242,7 @@
       border-radius: 10px;
       cursor: pointer;
       transition: transform .12s ease;
+      user-select: none;
     }
     #sai-send:hover { background: linear-gradient(180deg, #38bdf8, #0284c7); }
     #sai-send:active { transform: translateY(1px); }
@@ -224,6 +255,7 @@
     #sai-response::-webkit-scrollbar-thumb, #sai-input::-webkit-scrollbar-thumb {
       background: rgba(255,255,255,0.06);
       border-radius: 8px;
+      cursor: pointer;
     }
 
     /* Chat bubble styles - User only */
@@ -231,6 +263,8 @@
       margin-bottom: 12px;
       display: flex;
       flex-direction: column;
+      cursor: auto;
+      user-select: text;
     }
 
     .sai-user-message {
@@ -251,6 +285,8 @@
       font-size: 14px;
       line-height: 1.4;
       word-wrap: break-word;
+      cursor: auto;
+      user-select: text;
     }
 
     .sai-ai-content {
@@ -262,6 +298,10 @@
       font-size: 14px;
       line-height: 1.5;
       color: #e6f4ff;
+      cursor: auto;
+      user-select: text;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     .sai-sender {
@@ -269,6 +309,8 @@
       font-weight: 600;
       margin-bottom: 4px;
       padding: 0 4px;
+      cursor: default;
+      user-select: none;
     }
 
     .sai-user-sender {
@@ -338,6 +380,8 @@
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       font-size: 13px;
       color: #bae6fd;
+      cursor: text;
+      user-select: text;
     }
     
     .sai-ai-content blockquote {
@@ -345,6 +389,51 @@
       margin: 8px 0;
       padding-left: 12px;
       color: #cfeefe;
+    }
+
+    /* Selection styles for better readability */
+    .sai-ai-content ::selection,
+    .sai-user-bubble ::selection,
+    #sai-response ::selection {
+      background: rgba(14, 165, 233, 0.3);
+      color: #ffffff;
+    }
+
+    .sai-ai-content ::-moz-selection,
+    .sai-user-bubble ::-moz-selection,
+    #sai-response ::-moz-selection {
+      background: rgba(14, 165, 233, 0.3);
+      color: #ffffff;
+    }
+
+    /* Copy button for AI responses */
+    .sai-copy-button {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 6px;
+      color: #9fb4d6;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s ease, background 0.2s ease;
+      backdrop-filter: blur(4px);
+    }
+
+    .sai-copy-button:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+    }
+
+    .sai-ai-message {
+      position: relative;
+    }
+
+    .sai-ai-message:hover .sai-copy-button {
+      opacity: 1;
     }
   `;
   document.head.appendChild(style);
@@ -357,10 +446,196 @@
   const closeBtn = document.getElementById("sai-close");
   const responseEl = document.getElementById("sai-response");
   const loadingEl = document.getElementById("sai-loading");
+  const headerEl = document.getElementById("sai-header");
 
   // Session storage for chat history
   let chatHistory = [];
   let loadingInterval;
+
+  // Dragging state
+  let isDragging = false;
+  let dragOffset = { x: 0, y: 0 };
+  let currentPosition = { x: 0, y: 0 };
+
+  // Storage key for session data
+  const STORAGE_KEY = "watchwing_chat_session";
+
+  // Initialize session storage and load existing chat
+  function initializeSessionStorage() {
+    // Load any existing session data
+    const savedSession = sessionStorage.getItem(STORAGE_KEY);
+    if (savedSession) {
+      try {
+        const sessionData = JSON.parse(savedSession);
+        chatHistory = sessionData.chatHistory || [];
+        currentPosition = sessionData.position || { x: 0, y: 0 };
+
+        // Apply saved position if it exists and is not default
+        if (currentPosition.x !== 0 || currentPosition.y !== 0) {
+          chat.style.left = currentPosition.x + "px";
+          chat.style.top = currentPosition.y + "px";
+          chat.style.bottom = "auto";
+          chat.style.right = "auto";
+        }
+
+        // Restore chat history if any
+        if (chatHistory.length > 0) {
+          restoreChatHistory();
+        }
+      } catch (e) {
+        console.error("Error loading session data:", e);
+      }
+    }
+
+    // Set up beforeunload to clear session storage when tab closes
+    window.addEventListener("beforeunload", () => {
+      sessionStorage.removeItem(STORAGE_KEY);
+    });
+  }
+
+  // Save session data to sessionStorage
+  function saveSessionData() {
+    const sessionData = {
+      chatHistory: chatHistory,
+      position: currentPosition,
+      timestamp: Date.now(),
+    };
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+  }
+
+  // Restore chat history from saved session
+  function restoreChatHistory() {
+    responseEl.innerHTML = "";
+    if (chatHistory.length === 0) {
+      showWelcomeMessage();
+      return;
+    }
+
+    chatHistory.forEach((msg) => {
+      if (msg.role === "user") {
+        appendMessage("user", msg.content);
+      } else {
+        const formattedResponse = formatAiResponse(msg.content);
+        appendMessage("ai", formattedResponse, true);
+      }
+    });
+  }
+
+  // Show welcome message
+  function showWelcomeMessage() {
+    responseEl.innerHTML = "";
+    const welcomeDiv = document.createElement("div");
+    welcomeDiv.className = "sai-welcome-message";
+    welcomeDiv.textContent =
+      "Hey, welcome to Watchwing AI! Ask me anything about this screen.";
+    responseEl.appendChild(welcomeDiv);
+  }
+
+  // Set default position (always bottom right)
+  function setDefaultPosition() {
+    // Reset to default bottom right position
+    chat.style.bottom = "52px";
+    chat.style.right = "22px";
+    chat.style.left = "auto";
+    chat.style.top = "auto";
+    currentPosition = { x: 0, y: 0 };
+  }
+
+  // Dragging functionality
+  function initializeDragging() {
+    headerEl.addEventListener("mousedown", startDrag);
+    document.addEventListener("mousemove", onDrag);
+    document.addEventListener("mouseup", stopDrag);
+
+    // Touch events for mobile
+    headerEl.addEventListener("touchstart", startDragTouch);
+    document.addEventListener("touchmove", onDragTouch);
+    document.addEventListener("touchend", stopDrag);
+  }
+
+  function startDrag(e) {
+    isDragging = true;
+    const rect = chat.getBoundingClientRect();
+    dragOffset.x = e.clientX - rect.left;
+    dragOffset.y = e.clientY - rect.top;
+    headerEl.style.cursor = "grabbing";
+    e.preventDefault();
+  }
+
+  function startDragTouch(e) {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      const rect = chat.getBoundingClientRect();
+      dragOffset.x = e.touches[0].clientX - rect.left;
+      dragOffset.y = e.touches[0].clientY - rect.top;
+      headerEl.style.cursor = "grabbing";
+      e.preventDefault();
+    }
+  }
+
+  function onDrag(e) {
+    if (!isDragging) return;
+
+    const x = e.clientX - dragOffset.x;
+    const y = e.clientY - dragOffset.y;
+
+    setChatPosition(x, y);
+    e.preventDefault();
+  }
+
+  function onDragTouch(e) {
+    if (!isDragging || e.touches.length !== 1) return;
+
+    const x = e.touches[0].clientX - dragOffset.x;
+    const y = e.touches[0].clientY - dragOffset.y;
+
+    setChatPosition(x, y);
+    e.preventDefault();
+  }
+
+  function stopDrag() {
+    isDragging = false;
+    headerEl.style.cursor = "grab";
+    saveSessionData(); // Save position when dragging stops
+  }
+
+  function setChatPosition(x, y) {
+    // Constrain to viewport
+    const maxX = window.innerWidth - chat.offsetWidth;
+    const maxY = window.innerHeight - chat.offsetHeight;
+
+    currentPosition.x = Math.max(0, Math.min(x, maxX));
+    currentPosition.y = Math.max(0, Math.min(y, maxY));
+
+    // Use absolute positioning instead of bottom/right
+    chat.style.left = currentPosition.x + "px";
+    chat.style.top = currentPosition.y + "px";
+    chat.style.bottom = "auto";
+    chat.style.right = "auto";
+  }
+
+  // Copy text to clipboard
+  function copyToClipboard(text) {
+    // Create a temporary textarea element
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+
+    // Select and copy the text
+    textarea.select();
+    textarea.setSelectionRange(0, 99999); // For mobile devices
+
+    try {
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      return successful;
+    } catch (err) {
+      document.body.removeChild(textarea);
+      return false;
+    }
+  }
 
   // Helper: show loading overlay with progressive states
   function showLoading(step = 1) {
@@ -416,16 +691,18 @@
     btn.style.display = "none";
     chat.style.display = "flex";
     input.focus();
+
+    // Always use default bottom-right position when opening
+    setDefaultPosition();
   });
 
   closeBtn.addEventListener("click", () => {
     chat.style.display = "none";
     btn.style.display = "inline-block";
-    // Clear chat history when closing
-    chatHistory = [];
-    responseEl.textContent = "";
+    // DO NOT clear chat history when closing - keep it in session storage
     input.value = "";
     hideLoading();
+    saveSessionData(); // Save current state when closing
   });
 
   // Autosize textarea
@@ -439,6 +716,11 @@
 
   // Utility to append messages
   function appendMessage(sender, content, isFormatted = false) {
+    // Clear welcome message if it's the first actual message
+    if (responseEl.querySelector(".sai-welcome-message")) {
+      responseEl.innerHTML = "";
+    }
+
     const messageDiv = document.createElement("div");
     messageDiv.className = `sai-message ${
       sender === "user" ? "sai-user-message" : "sai-ai-message"
@@ -468,6 +750,27 @@
         contentDiv.textContent = content;
       }
       messageDiv.appendChild(contentDiv);
+
+      // Add copy button for AI responses
+      const copyButton = document.createElement("button");
+      copyButton.className = "sai-copy-button";
+      copyButton.textContent = "Copy";
+      copyButton.title = "Copy response to clipboard";
+
+      copyButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const textToCopy = contentDiv.textContent || contentDiv.innerText;
+        if (copyToClipboard(textToCopy)) {
+          copyButton.textContent = "Copied!";
+          copyButton.style.color = "#4ade80";
+          setTimeout(() => {
+            copyButton.textContent = "Copy";
+            copyButton.style.color = "";
+          }, 2000);
+        }
+      });
+
+      messageDiv.appendChild(copyButton);
     }
 
     responseEl.appendChild(messageDiv);
@@ -695,6 +998,9 @@
       // Add AI message to chat history and display
       chatHistory.push({ role: "assistant", content: aiResponse });
       appendMessage("ai", formattedResponse, true);
+
+      // Save updated chat history
+      saveSessionData();
     } catch (err) {
       // Make sure chat is visible even if there's an error
       showChatAfterCapture();
@@ -721,4 +1027,13 @@
       btn.style.display = msg.show ? "inline-block" : "none";
     }
   });
+
+  // Initialize the extension
+  initializeSessionStorage();
+  initializeDragging();
+
+  // Show welcome message if no chat history exists
+  if (chatHistory.length === 0) {
+    showWelcomeMessage();
+  }
 })();
