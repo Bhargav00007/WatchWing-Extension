@@ -15,80 +15,14 @@
 
 ---
 
-## How the Game Works
+## Setup Instructions
 
-- The player places a bet and clicks **Spin**.
-- Symbols fall onto a 5x5 grid.
-- If 3+ matching symbols connect vertically/horizontally, they **vanish**.
-- Cascading occurs: symbols above fall into place, and new symbols drop in.
-- This can trigger **chain reactions** of matches.
-- Payouts are awarded based on symbol type and match count.
-
----
-
-## Changing Symbol Probability
-
-There are **two separate files** to handle probability:
-
-### Backend Engine
-
-- **`/components/mystic-match-quest/probabilities.ts`**  
-  Controls actual probability logic for spins. Used in the `/api/mystic-match-quest/route.ts` endpoint.
-
-### Frontend UI Tester (for demo/debug only)
-
-- **`/app/components/mystic-match-quest/probabilities.ts`**  
-  A mock probability utility for frontend tests or simulations. _Not used in real spins._
-
-To modify:
-
-```ts
-// components/probabilities.ts
-const SYMBOL_WEIGHTS = {
-  { symbol: "gem", weight: 35}, // Most common, lowest value
-  { symbol: "helmet", weight: 30 }, // Common, low value
-  { symbol: "star", weight: 20}, // Medium frequency, medium value
-  { symbol: "dragon", weight: 10 }, // Less common, higher value
-  { symbol: "crown", weight: 4}, // Rare, high value
-  { symbol: "shield", weight: 1 }, // Very rare, highest value
-};
-```
-
-## Development Setup
-
-1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
-git clone git@github.com:Bhargav00007/MatchBlocks-Dev.git
+git clone https://github.com/Bhargav00007/watchwing-extension.git
+cd watchwing-extension
 ```
-
-2. Install dependencies
-
-```bash
-npm install
-```
-
-3. Setup environment
-   Create .env.local and copy contents from the provided .env.example.
-
-```bash
-cp .env.example .env.local
-```
-
-4. Run in development
-
-```bash
-npm run dev
-```
-
-5. Build for production
-
-```bash
-npm run build
-npm start
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## File Descriptions
 
@@ -107,17 +41,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - **sessionManager.js** — Stores and restores session history locally so conversations persist across page reloads.
 - **responseFormatter.js** — Formats and styles AI messages with structured layout, markdown support, and copy-to-clipboard actions.
 - **styles.js** — Manages visual theme, layout styles, animations, and color consistency throughout the chat interface.
-
----
-
-## ⚙️ Setup Instructions
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/Bhargav00007/watchwing-extension.git
-cd watchwing-extension
-```
 
 ---
 
