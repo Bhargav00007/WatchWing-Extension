@@ -228,8 +228,7 @@ class ChatManager {
     responseEl.innerHTML = "";
     const welcomeDiv = document.createElement("div");
     welcomeDiv.className = "sai-welcome-message";
-    welcomeDiv.textContent =
-      "Hey, welcome to Watchwing AI! Ask me anything about this screen.";
+    welcomeDiv.textContent = "Hey, welcome to Watchwing";
     responseEl.appendChild(welcomeDiv);
   }
 
