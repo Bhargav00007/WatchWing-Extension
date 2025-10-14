@@ -261,6 +261,7 @@ class Styles {
       user-select: text;
       word-wrap: break-word;
       overflow-wrap: break-word;
+      position: relative;
     }
 
     .sai-sender {
@@ -380,6 +381,7 @@ class Styles {
       opacity: 0;
       transition: opacity 0.2s ease, background 0.2s ease;
       backdrop-filter: blur(4px);
+      z-index: 2;
     }
 
     .sai-copy-button:hover {
@@ -387,12 +389,84 @@ class Styles {
       color: #ffffff;
     }
 
+    /* Voice button for AI responses */
+    .sai-voice-button {
+      position: absolute;
+      top: 8px;
+      right: 60px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 6px;
+      color: #9fb4d6;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s ease, background 0.2s ease;
+      backdrop-filter: blur(4px);
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 24px;
+    }
+
+    .sai-voice-button:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #7dd3fc;
+    }
+
+    .sai-voice-button.playing {
+      color: #7dd3fc;
+      background: rgba(125, 211, 252, 0.1);
+    }
+
+    .sai-voice-button.playing:hover {
+      background: rgba(125, 211, 252, 0.15);
+    }
+
     .sai-ai-message {
       position: relative;
     }
 
-    .sai-ai-message:hover .sai-copy-button {
+    .sai-ai-message:hover .sai-copy-button,
+    .sai-ai-message:hover .sai-voice-button {
       opacity: 1;
+    }
+
+    /* Voice controls container */
+    .sai-voice-controls {
+      display: flex;
+      gap: 4px;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+    }
+
+    /* Voice loading indicator */
+    .sai-voice-loading {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid #7dd3fc;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: sai-voice-spin 1s ease-in-out infinite;
+    }
+
+    @keyframes sai-voice-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 400px) {
+      .sai-voice-button {
+        right: 55px;
+      }
+      .sai-copy-button {
+        right: 8px;
+      }
     }
     `;
   }

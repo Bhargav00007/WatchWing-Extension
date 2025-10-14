@@ -44,12 +44,61 @@
         UIManager.toggleAskButton(msg.show);
       }
     });
+
+    // Stop speech when closing the chat
+    const closeBtn = document.getElementById("sai-close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => {
+        ChatManager.stopSpeech();
+      });
+    }
+
+    // Stop speech when sending new messages
+    const sendBtn = document.getElementById("sai-send");
+    if (sendBtn) {
+      const originalSend = sendBtn.onclick;
+      sendBtn.onclick = function (e) {
+        ChatManager.stopSpeech();
+        if (originalSend) originalSend.call(this, e);
+      };
+    }
+
+    // Pre-load voices
+    if ("speechSynthesis" in window) {
+      // Force voice loading
+      speechSynthesis.getVoices();
+
+      // Re-try voice loading after a delay
+      setTimeout(() => {
+        speechSynthesis.getVoices();
+      }, 1000);
+    }
   }
 
   // Global access for external control
   window.__watchwing = {
     open: () => UIManager.openChat(),
-    close: () => UIManager.closeChat(),
+    close: () => {
+      ChatManager.stopSpeech();
+      UIManager.closeChat();
+    },
+    speak: (text) => {
+      // External API to trigger speech
+      const responseEl = document.getElementById("sai-response");
+      if (responseEl) {
+        const lastAiMessage = responseEl.querySelector(
+          ".sai-ai-message:last-child"
+        );
+        if (lastAiMessage) {
+          const voiceButton = lastAiMessage.querySelector(".sai-voice-button");
+          const contentDiv = lastAiMessage.querySelector(".sai-ai-content");
+          if (voiceButton && contentDiv) {
+            ChatManager.speakMessage(lastAiMessage, contentDiv, voiceButton);
+          }
+        }
+      }
+    },
+    stopSpeech: () => ChatManager.stopSpeech(),
   };
 
   // Initialize when DOM is ready

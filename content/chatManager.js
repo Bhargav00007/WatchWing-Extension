@@ -1,9 +1,35 @@
 class ChatManager {
   static loadingInterval = null;
+  static currentSpeech = {
+    utterance: null,
+    isPlaying: false,
+    currentMessage: null,
+    currentButton: null,
+    audioContext: null,
+    audioElement: null,
+  };
 
   static initialize(backendUrl) {
     this.BACKEND_URL = backendUrl;
     this.setupChatEventListeners();
+    this.initializeVoices();
+  }
+
+  static initializeVoices() {
+    // Pre-load voices when available
+    if ("speechSynthesis" in window) {
+      speechSynthesis.onvoiceschanged = () => {
+        console.log("Voices loaded:", speechSynthesis.getVoices().length);
+      };
+
+      // Trigger voices loading
+      const voices = speechSynthesis.getVoices();
+      if (voices.length === 0) {
+        setTimeout(() => {
+          speechSynthesis.getVoices();
+        }, 1000);
+      }
+    }
   }
 
   static setupChatEventListeners() {
@@ -46,6 +72,9 @@ class ChatManager {
       UIManager.elements.input.value.trim() ||
       "Describe what's in this screen.";
     if (!prompt) return;
+
+    // Stop any ongoing speech when sending new message
+    this.stopSpeech();
 
     // Add user message to chat history and display
     SessionManager.chatHistory.push({ role: "user", content: prompt });
@@ -118,10 +147,13 @@ class ChatManager {
         role: "assistant",
         content: aiResponse,
       });
-      this.appendMessage("ai", formattedResponse, true);
+      const messageElement = this.appendMessage("ai", formattedResponse, true);
 
       // Save updated chat history
       SessionManager.saveSessionData();
+
+      // Store the plain text for speech synthesis
+      messageElement.setAttribute("data-plain-text", aiResponse);
     } catch (err) {
       // Make sure chat is visible even if there's an error
       UIManager.showAfterCapture();
@@ -171,6 +203,9 @@ class ChatManager {
 
       // Add copy button for AI responses
       this.addCopyButton(messageDiv, contentDiv);
+
+      // Add voice button for AI responses
+      this.addVoiceButton(messageDiv, contentDiv);
     }
 
     responseEl.appendChild(messageDiv);
@@ -203,6 +238,258 @@ class ChatManager {
     messageDiv.appendChild(copyButton);
   }
 
+  static addVoiceButton(messageDiv, contentDiv) {
+    const voiceButton = document.createElement("button");
+    voiceButton.className = "sai-voice-button";
+    voiceButton.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+      </svg>
+    `;
+    voiceButton.title = "Read response aloud";
+
+    voiceButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggleSpeech(messageDiv, contentDiv, voiceButton);
+    });
+
+    messageDiv.appendChild(voiceButton);
+  }
+
+  static toggleSpeech(messageDiv, contentDiv, voiceButton) {
+    // If this message is already being spoken, toggle pause/play
+    if (
+      this.currentSpeech.currentMessage === messageDiv &&
+      this.currentSpeech.isPlaying
+    ) {
+      this.pauseSpeech();
+      voiceButton.classList.remove("playing");
+      voiceButton.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
+      `;
+    } else {
+      // Stop any current speech
+      this.stopSpeech();
+
+      // Start speaking this message
+      this.speakMessage(messageDiv, contentDiv, voiceButton);
+    }
+  }
+
+  static speakMessage(messageDiv, contentDiv, voiceButton) {
+    const plainText =
+      messageDiv.getAttribute("data-plain-text") ||
+      contentDiv.textContent ||
+      contentDiv.innerText;
+
+    if (!plainText.trim()) return;
+
+    // Check if browser supports speech synthesis
+    if (!("speechSynthesis" in window)) {
+      this.showError("Text-to-speech is not supported in your browser");
+      return;
+    }
+
+    // Show loading state
+    voiceButton.innerHTML = `<div class="sai-voice-loading"></div>`;
+
+    // Get available voices
+    const voices = speechSynthesis.getVoices();
+
+    // Enhanced voice selection for natural female voice
+    const preferredFemaleVoices = [
+      "Google UK English Female",
+      "Microsoft Zira Desktop",
+      "Samantha",
+      "Karen",
+      "Victoria",
+      "Tessa",
+      "Fiona",
+      "Moira",
+      "Daniel",
+      "Google US English",
+      "Microsoft David Desktop",
+    ];
+
+    // Find the best available voice
+    let selectedVoice = null;
+
+    // First try: Find exact matches from preferred list
+    for (const voiceName of preferredFemaleVoices) {
+      const voice = voices.find((v) => v.name === voiceName);
+      if (voice) {
+        selectedVoice = voice;
+        break;
+      }
+    }
+
+    // Second try: Find voices with female indicators
+    if (!selectedVoice) {
+      selectedVoice = voices.find(
+        (voice) =>
+          voice.name.toLowerCase().includes("female") ||
+          voice.name.toLowerCase().includes("woman") ||
+          voice.name.toLowerCase().includes("samantha") ||
+          voice.name.toLowerCase().includes("zira") ||
+          voice.name.toLowerCase().includes("karen") ||
+          voice.name.toLowerCase().includes("victoria") ||
+          voice.name.toLowerCase().includes("tessa") ||
+          voice.name.toLowerCase().includes("fiona") ||
+          voice.name.toLowerCase().includes("moira")
+      );
+    }
+
+    // Third try: Find any English voice that's not explicitly male
+    if (!selectedVoice) {
+      selectedVoice = voices.find(
+        (voice) =>
+          voice.lang.includes("en") &&
+          !voice.name.toLowerCase().includes("male") &&
+          !voice.name.toLowerCase().includes("david")
+      );
+    }
+
+    // Final fallback: Use first available voice
+    if (!selectedVoice && voices.length > 0) {
+      selectedVoice = voices[0];
+    }
+
+    if (!selectedVoice) {
+      this.showError("No speech voices available");
+      voiceButton.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
+      `;
+      return;
+    }
+
+    console.log("Using voice:", selectedVoice.name);
+
+    // Process text for more natural speech
+    const processedText = this.processTextForSpeech(plainText);
+
+    // Create utterance with optimized settings for natural speech
+    const utterance = new SpeechSynthesisUtterance(processedText);
+
+    // Advanced voice settings for natural female speech
+    utterance.voice = selectedVoice;
+    utterance.rate = 0.95; // Slightly slower for more natural cadence
+    utterance.pitch = 1.2; // Higher pitch for female voice
+    utterance.volume = 1;
+
+    // Add slight pauses for better natural flow
+    utterance.text = this.addSpeechPauses(utterance.text);
+
+    // Store current speech state
+    this.currentSpeech = {
+      utterance: utterance,
+      isPlaying: true,
+      currentMessage: messageDiv,
+      currentButton: voiceButton,
+    };
+
+    // Update button to show pause icon
+    voiceButton.classList.add("playing");
+    voiceButton.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+      </svg>
+    `;
+
+    // Set up event listeners
+    utterance.onstart = () => {
+      console.log("Speech started with voice:", selectedVoice.name);
+    };
+
+    utterance.onend = () => {
+      this.stopSpeech();
+    };
+
+    utterance.onerror = (event) => {
+      console.error("Speech synthesis error:", event.error);
+      this.stopSpeech();
+    };
+
+    // Use a small delay to ensure proper voice loading
+    setTimeout(() => {
+      try {
+        speechSynthesis.speak(utterance);
+      } catch (error) {
+        console.error("Error starting speech:", error);
+        this.stopSpeech();
+      }
+    }, 50);
+  }
+
+  static processTextForSpeech(text) {
+    // Clean and process text for more natural speech
+    let processed = text
+      // Remove markdown symbols
+      .replace(/#{1,6}\s?/g, "")
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/\*(.*?)\*/g, "$1")
+      .replace(/`(.*?)`/g, "$1")
+      // Replace common abbreviations
+      .replace(/\bAI\b/gi, "A I")
+      .replace(/\bAPI\b/gi, "A P I")
+      .replace(/\bCSS\b/gi, "C S S")
+      .replace(/\bHTML\b/gi, "H T M L")
+      .replace(/\bJS\b/gi, "JavaScript")
+      // Remove extra whitespace
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return processed;
+  }
+
+  static addSpeechPauses(text) {
+    // Add commas for natural pauses in longer sentences
+    return text
+      .replace(/([.!?])\s+([A-Z])/g, "$1, $2")
+      .replace(/([^.,!?;])\s+but\s+/gi, "$1, but ")
+      .replace(/([^.,!?;])\s+and\s+([A-Z])/gi, "$1, and $2")
+      .replace(/([^.,!?;])\s+or\s+([A-Z])/gi, "$1, or $2");
+  }
+
+  static pauseSpeech() {
+    if (this.currentSpeech.isPlaying && this.currentSpeech.utterance) {
+      speechSynthesis.pause();
+      this.currentSpeech.isPlaying = false;
+    }
+  }
+
+  static resumeSpeech() {
+    if (!this.currentSpeech.isPlaying && this.currentSpeech.utterance) {
+      speechSynthesis.resume();
+      this.currentSpeech.isPlaying = true;
+    }
+  }
+
+  static stopSpeech() {
+    if (this.currentSpeech.utterance) {
+      speechSynthesis.cancel();
+
+      if (this.currentSpeech.currentButton) {
+        this.currentSpeech.currentButton.classList.remove("playing");
+        this.currentSpeech.currentButton.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+        `;
+      }
+
+      this.currentSpeech = {
+        utterance: null,
+        isPlaying: false,
+        currentMessage: null,
+        currentButton: null,
+      };
+    }
+  }
+
   static copyToClipboard(text) {
     const textarea = document.createElement("textarea");
     textarea.value = text;
@@ -228,7 +515,8 @@ class ChatManager {
     responseEl.innerHTML = "";
     const welcomeDiv = document.createElement("div");
     welcomeDiv.className = "sai-welcome-message";
-    welcomeDiv.textContent = "Hey, welcome to Watchwing";
+    welcomeDiv.textContent =
+      "Hey, welcome to Watchwing AI! Ask me anything about this screen.";
     responseEl.appendChild(welcomeDiv);
   }
 
@@ -248,7 +536,13 @@ class ChatManager {
         const formattedResponse = ResponseFormatter.formatAiResponse(
           msg.content
         );
-        this.appendMessage("ai", formattedResponse, true);
+        const messageElement = this.appendMessage(
+          "ai",
+          formattedResponse,
+          true
+        );
+        // Store plain text for speech synthesis
+        messageElement.setAttribute("data-plain-text", msg.content);
       }
     });
   }
