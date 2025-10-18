@@ -9,10 +9,17 @@ class ChatManager {
     audioElement: null,
   };
 
+  static voiceInput = {
+    isRecording: false,
+    recognition: null,
+    lastVoiceInput: false,
+  };
+
   static initialize(backendUrl) {
     this.BACKEND_URL = backendUrl;
     this.setupChatEventListeners();
     this.initializeVoices();
+    this.initializeSpeechRecognition();
   }
 
   static initializeVoices() {
@@ -30,6 +37,134 @@ class ChatManager {
         }, 1000);
       }
     }
+  }
+
+  static initializeSpeechRecognition() {
+    // Check if speech recognition is available
+    if (
+      !("webkitSpeechRecognition" in window) &&
+      !("SpeechRecognition" in window)
+    ) {
+      console.warn("Speech recognition not supported in this browser");
+      return;
+    }
+
+    // Create speech recognition instance
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    this.voiceInput.recognition = new SpeechRecognition();
+
+    // Configure recognition
+    this.voiceInput.recognition.continuous = false;
+    this.voiceInput.recognition.interimResults = true;
+    this.voiceInput.recognition.lang = "en-US";
+    this.voiceInput.recognition.maxAlternatives = 1;
+
+    // Set up event handlers
+    this.voiceInput.recognition.onstart = () => {
+      console.log("Speech recognition started");
+      this.setRecordingState(true);
+    };
+
+    this.voiceInput.recognition.onresult = (event) => {
+      let finalTranscript = "";
+      let interimTranscript = "";
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      // Update input with the transcribed text
+      const input = UIManager.elements.input;
+      if (finalTranscript) {
+        input.value = finalTranscript;
+        UIManager.autoSizeTextarea(input);
+      } else if (interimTranscript) {
+        input.value = interimTranscript;
+        UIManager.autoSizeTextarea(input);
+      }
+    };
+
+    this.voiceInput.recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+      this.setRecordingState(false);
+
+      if (event.error === "not-allowed") {
+        this.showError(
+          "Microphone access denied. Please allow microphone permissions."
+        );
+      } else if (event.error === "no-speech") {
+        this.showError("No speech detected. Please try again.");
+      }
+    };
+
+    this.voiceInput.recognition.onend = () => {
+      console.log("Speech recognition ended");
+      this.setRecordingState(false);
+    };
+  }
+
+  static setRecordingState(isRecording) {
+    this.voiceInput.isRecording = isRecording;
+    const micButton = document.getElementById("sai-mic");
+
+    if (micButton) {
+      if (isRecording) {
+        micButton.classList.add("recording");
+        micButton.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+          </svg>
+          <div class="sai-recording-indicator"></div>
+        `;
+      } else {
+        micButton.classList.remove("recording");
+        micButton.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+          </svg>
+        `;
+      }
+    }
+  }
+
+  static toggleVoiceInput() {
+    if (!this.voiceInput.recognition) {
+      this.showError("Speech recognition is not supported in your browser");
+      return;
+    }
+
+    if (this.voiceInput.isRecording) {
+      this.stopVoiceInput();
+    } else {
+      this.startVoiceInput();
+    }
+  }
+
+  static startVoiceInput() {
+    try {
+      this.voiceInput.recognition.start();
+      this.voiceInput.lastVoiceInput = true; // Mark that this input came from voice
+    } catch (error) {
+      console.error("Error starting speech recognition:", error);
+      this.showError(
+        "Failed to start voice input. Please check microphone permissions."
+      );
+    }
+  }
+
+  static stopVoiceInput() {
+    try {
+      this.voiceInput.recognition.stop();
+    } catch (error) {
+      console.error("Error stopping speech recognition:", error);
+    }
+    this.setRecordingState(false);
   }
 
   static setupChatEventListeners() {
@@ -65,6 +200,14 @@ class ChatManager {
         btn.click();
       }
     });
+
+    // Microphone button
+    const micButton = document.getElementById("sai-mic");
+    if (micButton) {
+      micButton.addEventListener("click", () => {
+        this.toggleVoiceInput();
+      });
+    }
   }
 
   static async doSend() {
@@ -75,6 +218,11 @@ class ChatManager {
 
     // Stop any ongoing speech when sending new message
     this.stopSpeech();
+
+    // Stop voice recording if active
+    if (this.voiceInput.isRecording) {
+      this.stopVoiceInput();
+    }
 
     // Add user message to chat history and display
     SessionManager.chatHistory.push({ role: "user", content: prompt });
@@ -154,12 +302,30 @@ class ChatManager {
 
       // Store the plain text for speech synthesis
       messageElement.setAttribute("data-plain-text", aiResponse);
+
+      // Auto-speak the response if the input came from voice
+      if (this.voiceInput.lastVoiceInput) {
+        const voiceButton = messageElement.querySelector(".sai-voice-button");
+        const contentDiv = messageElement.querySelector(".sai-ai-content");
+        if (voiceButton && contentDiv) {
+          // Small delay to ensure UI is ready
+          setTimeout(() => {
+            this.speakMessage(messageElement, contentDiv, voiceButton);
+          }, 500);
+        }
+      }
+
+      // Reset voice input flag
+      this.voiceInput.lastVoiceInput = false;
     } catch (err) {
       // Make sure chat is visible even if there's an error
       UIManager.showAfterCapture();
       this.hideLoading();
       console.error(err);
       this.showError(err.message || String(err));
+
+      // Reset voice input flag on error too
+      this.voiceInput.lastVoiceInput = false;
     }
   }
 

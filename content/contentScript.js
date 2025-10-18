@@ -50,6 +50,7 @@
     if (closeBtn) {
       closeBtn.addEventListener("click", () => {
         ChatManager.stopSpeech();
+        ChatManager.stopVoiceInput();
       });
     }
 
@@ -80,6 +81,7 @@
     open: () => UIManager.openChat(),
     close: () => {
       ChatManager.stopSpeech();
+      ChatManager.stopVoiceInput();
       UIManager.closeChat();
     },
     speak: (text) => {
@@ -98,6 +100,8 @@
         }
       }
     },
+    startVoiceInput: () => ChatManager.startVoiceInput(),
+    stopVoiceInput: () => ChatManager.stopVoiceInput(),
     stopSpeech: () => ChatManager.stopSpeech(),
   };
 

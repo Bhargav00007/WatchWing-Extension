@@ -206,6 +206,78 @@ class Styles {
     #sai-send:hover { background: linear-gradient(180deg, #38bdf8, #0284c7); }
     #sai-send:active { transform: translateY(1px); }
 
+    /* Microphone button - POSITIONED BETWEEN INPUT AND SEND BUTTON */
+    #sai-mic {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height: 40px;
+      width: 44px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #9fb4d6;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      user-select: none;
+      order: 2; /* Positions it between input (1) and send (3) */
+    }
+
+    #sai-mic:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #7dd3fc;
+    }
+
+    #sai-mic.recording {
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.3);
+      color: #0ea5e9;
+      animation: sai-pulse 1.5s ease-in-out infinite;
+    }
+
+    #sai-mic.recording:hover {
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.4);
+    }
+
+    @keyframes sai-pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 6px rgba(14, 165, 233, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+      }
+    }
+
+    /* Voice recording indicator */
+    .sai-recording-indicator {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 12px;
+      height: 12px;
+      background: #ef4444;
+      border-radius: 50%;
+      animation: sai-recording-pulse 1s infinite;
+    }
+
+    @keyframes sai-recording-pulse {
+      0% {
+        transform: scale(0.8);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+      }
+      100% {
+        transform: scale(0.8);
+        opacity: 1;
+      }
+    }
+
     /* Scrollbar tweaks for dark mode */
     #sai-response::-webkit-scrollbar, #sai-input::-webkit-scrollbar {
       width: 6px;
@@ -466,6 +538,12 @@ class Styles {
       }
       .sai-copy-button {
         right: 8px;
+      }
+      #sai-mic {
+        width: 40px;
+      }
+      #sai-send {
+        width: 40px;
       }
     }
     `;
