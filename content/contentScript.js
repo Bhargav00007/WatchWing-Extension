@@ -74,6 +74,12 @@
         speechSynthesis.getVoices();
       }, 1000);
     }
+
+    // Handle window resize to update max height constraints
+    window.addEventListener("resize", () => {
+      // This will ensure the chat doesn't exceed viewport bounds
+      SessionManager.saveSessionData();
+    });
   }
 
   // Global access for external control
@@ -103,6 +109,10 @@
     startVoiceInput: () => ChatManager.startVoiceInput(),
     stopVoiceInput: () => ChatManager.stopVoiceInput(),
     stopSpeech: () => ChatManager.stopSpeech(),
+    resize: (height) => {
+      // External API to resize the chat window
+      UIManager.setChatHeight(height);
+    },
   };
 
   // Initialize when DOM is ready

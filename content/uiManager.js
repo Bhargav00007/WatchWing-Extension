@@ -1,6 +1,9 @@
 class UIManager {
   static elements = {};
   static isChatOpen = false;
+  static isResizing = false;
+  static startHeight = 0;
+  static startY = 0;
 
   static createUI() {
     // Create main container
@@ -11,6 +14,9 @@ class UIManager {
 
     // Cache element references
     this.cacheElements();
+
+    // Initialize resize functionality
+    this.initializeResize();
   }
 
   static cacheElements() {
@@ -25,6 +31,7 @@ class UIManager {
       responseEl: document.getElementById("sai-response"),
       loadingEl: document.getElementById("sai-loading"),
       headerEl: document.getElementById("sai-header"),
+      resizeHandle: document.getElementById("sai-resize-handle"),
     };
   }
 
@@ -61,6 +68,9 @@ class UIManager {
             </svg>
           </button>
         </div>
+        
+        <!-- Resize Handle -->
+        <div id="sai-resize-handle" class="sai-resize-handle" title="Resize window"></div>
       </div>
     </div>`;
   }
@@ -71,14 +81,112 @@ class UIManager {
     document.head.appendChild(style);
   }
 
+  static initializeResize() {
+    const resizeHandle = this.elements.resizeHandle;
+    const chat = this.elements.chat;
+
+    if (!resizeHandle || !chat) return;
+
+    // Mouse events for resize
+    resizeHandle.addEventListener("mousedown", this.startResize.bind(this));
+
+    // Touch events for mobile resize
+    resizeHandle.addEventListener(
+      "touchstart",
+      this.startResizeTouch.bind(this)
+    );
+
+    // Prevent text selection during resize
+    resizeHandle.addEventListener("selectstart", (e) => e.preventDefault());
+    resizeHandle.addEventListener("dragstart", (e) => e.preventDefault());
+  }
+
+  static startResize(e) {
+    e.preventDefault();
+    this.isResizing = true;
+    this.startHeight = this.elements.chat.offsetHeight;
+    this.startY = e.clientY;
+
+    document.addEventListener("mousemove", this.handleResize.bind(this));
+    document.addEventListener("mouseup", this.stopResize.bind(this));
+
+    this.elements.chat.style.userSelect = "none";
+    document.body.style.cursor = "nwse-resize";
+  }
+
+  static startResizeTouch(e) {
+    e.preventDefault();
+    if (e.touches.length !== 1) return;
+
+    this.isResizing = true;
+    this.startHeight = this.elements.chat.offsetHeight;
+    this.startY = e.touches[0].clientY;
+
+    document.addEventListener("touchmove", this.handleResizeTouch.bind(this));
+    document.addEventListener("touchend", this.stopResize.bind(this));
+
+    this.elements.chat.style.userSelect = "none";
+  }
+
+  static handleResize(e) {
+    if (!this.isResizing) return;
+
+    const deltaY = this.startY - e.clientY;
+    const newHeight = this.startHeight + deltaY;
+
+    this.setChatHeight(newHeight);
+  }
+
+  static handleResizeTouch(e) {
+    if (!this.isResizing || e.touches.length !== 1) return;
+
+    const deltaY = this.startY - e.touches[0].clientY;
+    const newHeight = this.startHeight + deltaY;
+
+    this.setChatHeight(newHeight);
+  }
+
+  static setChatHeight(newHeight) {
+    const chat = this.elements.chat;
+    const minHeight = 320; // Minimum height in pixels
+    const maxHeight = window.innerHeight * 0.8; // 80% of viewport height
+
+    // Constrain height within limits
+    const constrainedHeight = Math.max(
+      minHeight,
+      Math.min(newHeight, maxHeight)
+    );
+
+    chat.style.height = `${constrainedHeight}px`;
+
+    // Update session data with new height
+    SessionManager.saveSessionData();
+  }
+
+  static stopResize() {
+    this.isResizing = false;
+
+    document.removeEventListener("mousemove", this.handleResize.bind(this));
+    document.removeEventListener("mouseup", this.stopResize.bind(this));
+    document.removeEventListener(
+      "touchmove",
+      this.handleResizeTouch.bind(this)
+    );
+    document.removeEventListener("touchend", this.stopResize.bind(this));
+
+    this.elements.chat.style.userSelect = "";
+    document.body.style.cursor = "";
+  }
+
   static openChat() {
     this.elements.btn.style.display = "none";
     this.elements.chat.style.display = "flex";
     this.elements.input.focus();
     this.isChatOpen = true;
 
-    // Reset to default position
+    // Reset to default position and restore saved height
     DragManager.setDefaultPosition();
+    this.restoreSavedHeight();
   }
 
   static closeChat() {
@@ -92,13 +200,21 @@ class UIManager {
     SessionManager.saveSessionData();
   }
 
+  static restoreSavedHeight() {
+    // Restore saved height from session if available
+    const savedHeight = SessionManager.getSavedHeight();
+    if (savedHeight) {
+      this.setChatHeight(savedHeight);
+    }
+  }
+
   static toggleAskButton(show) {
     this.elements.btn.style.display = show ? "inline-block" : "none";
   }
 
   static autoSizeTextarea(textarea) {
     textarea.style.height = "auto";
-    const maxHeight = 160;
+    const maxHeight = 120;
     textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + "px";
   }
 

@@ -29,6 +29,13 @@ class SessionManager {
           chat.style.bottom = "auto";
           chat.style.right = "auto";
         }
+
+        // Apply saved height if available
+        if (sessionData.chatHeight) {
+          setTimeout(() => {
+            UIManager.setChatHeight(sessionData.chatHeight);
+          }, 100);
+        }
       } catch (e) {
         console.error("Error loading session data:", e);
       }
@@ -36,12 +43,29 @@ class SessionManager {
   }
 
   static saveSessionData() {
+    const chat = UIManager.elements.chat;
+    const currentHeight = chat ? chat.offsetHeight : 420;
+
     const sessionData = {
       chatHistory: this.chatHistory,
       position: DragManager.getCurrentPosition(),
+      chatHeight: currentHeight,
       timestamp: Date.now(),
     };
     sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(sessionData));
+  }
+
+  static getSavedHeight() {
+    const savedSession = sessionStorage.getItem(this.STORAGE_KEY);
+    if (savedSession) {
+      try {
+        const sessionData = JSON.parse(savedSession);
+        return sessionData.chatHeight || null;
+      } catch (e) {
+        console.error("Error getting saved height:", e);
+      }
+    }
+    return null;
   }
 
   static clearSession() {

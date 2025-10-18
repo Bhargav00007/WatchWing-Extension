@@ -18,6 +18,9 @@ class DragManager {
   }
 
   static startDrag(e) {
+    // Don't start drag if resizing
+    if (UIManager.isResizing) return;
+
     this.isDragging = true;
     const chat = UIManager.elements.chat;
     const rect = chat.getBoundingClientRect();
@@ -28,7 +31,7 @@ class DragManager {
   }
 
   static startDragTouch(e) {
-    if (e.touches.length === 1) {
+    if (e.touches.length === 1 && !UIManager.isResizing) {
       this.isDragging = true;
       const chat = UIManager.elements.chat;
       const rect = chat.getBoundingClientRect();

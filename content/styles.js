@@ -28,14 +28,15 @@ class Styles {
     }
     #sai-btn:hover { background: linear-gradient(180deg, #111c3a, #0d162e); opacity: 0.85; }
 
-    /* Chat panel (dark, no shadow, tighter padding) */
+    /* Chat panel (dark, no shadow, tighter padding) - NOW RESIZABLE */
     #sai-chat {
       display:flex;
       flex-direction: column;
       width: 360px;
       max-width: calc(100vw - 48px);
-      height: 420px;
-      max-height: calc(100vh - 48px);
+      min-height: 320px;
+      max-height: 80vh;
+      height: 420px; /* Default height */
       background: linear-gradient(180deg, #071028, #0b1220);
       border-radius: 14px;
       border: 1px solid rgba(255,255,255,0.04);
@@ -48,6 +49,9 @@ class Styles {
       right: 22px;
       cursor: default;
       user-select: none;
+      resize: both;
+      min-width: 300px;
+      max-width: 90vw;
     }
 
     /* Header */
@@ -59,6 +63,7 @@ class Styles {
       padding: 4px 6px;
       border-bottom: 1px solid rgba(255,255,255,0.02);
       cursor: grab;
+      flex-shrink: 0;
     }
     #sai-header:active {
       cursor: grabbing;
@@ -80,7 +85,7 @@ class Styles {
     }
     #sai-close:hover { background: rgba(255,255,255,0.02); color: #ffffff; }
 
-    /* Body (response container) */
+    /* Body (response container) - NOW FLEXIBLE */
     #sai-body {
       position: relative;
       flex: 1 1 auto;
@@ -90,9 +95,10 @@ class Styles {
       padding: 8px;
       overflow: hidden;
       cursor: default;
+      min-height: 120px;
     }
 
-    /* Response area */
+    /* Response area - NOW SCROLLABLE AND FLEXIBLE */
     #sai-response {
       width: 100%;
       height: 100%;
@@ -105,6 +111,8 @@ class Styles {
       line-height: 1.45;
       cursor: auto;
       user-select: text;
+      flex: 1;
+      min-height: 0; /* Important for flex child scrolling */
     }
 
     /* Welcome message */
@@ -117,6 +125,10 @@ class Styles {
       opacity: 0.9;
       cursor: default;
       user-select: none;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* Chat separators */
@@ -169,13 +181,14 @@ class Styles {
       cursor: default;
       user-select: none;
       position: relative;
+      flex-shrink: 0;
     }
 
     /* Input with buttons inside */
     #sai-input {
       flex: 1 1 auto;
       min-height: 40px;
-      max-height: 160px;
+      max-height: 120px;
       resize: none;
       padding: 8px 90px 8px 10px; /* Extra right padding for buttons */
       border-radius: 10px;
@@ -296,6 +309,39 @@ class Styles {
       }
     }
 
+    /* Resize handle */
+    .sai-resize-handle {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      cursor: nwse-resize;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .sai-resize-handle::before {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid rgba(255,255,255,0.3);
+      border-bottom: 2px solid rgba(255,255,255,0.3);
+      border-radius: 1px;
+    }
+
+    #sai-chat:hover .sai-resize-handle {
+      opacity: 0.7;
+    }
+
+    .sai-resize-handle:hover {
+      opacity: 1 !important;
+    }
+
     /* Scrollbar tweaks for dark mode */
     #sai-response::-webkit-scrollbar, #sai-input::-webkit-scrollbar {
       width: 6px;
@@ -305,6 +351,16 @@ class Styles {
       background: rgba(255,255,255,0.06);
       border-radius: 8px;
       cursor: pointer;
+    }
+
+    /* Custom scrollbar for resizable chat */
+    #sai-response::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+    }
+
+    #sai-response::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.1);
     }
 
     /* Chat bubble styles - User only */
@@ -551,6 +607,15 @@ class Styles {
 
     /* Responsive adjustments */
     @media (max-width: 400px) {
+      #sai-chat {
+        width: calc(100vw - 40px);
+        min-width: unset;
+        max-width: calc(100vw - 40px);
+        height: 70vh;
+        min-height: 300px;
+        max-height: 80vh;
+      }
+      
       .sai-voice-button {
         right: 55px;
       }
@@ -568,6 +633,18 @@ class Styles {
       }
       #sai-input {
         padding-right: 80px;
+      }
+      
+      .sai-resize-handle {
+        opacity: 0.5; /* Always visible on mobile */
+      }
+    }
+
+    /* Small screen height adjustments */
+    @media (max-height: 600px) {
+      #sai-chat {
+        min-height: 280px;
+        max-height: 75vh;
       }
     }
     `;
