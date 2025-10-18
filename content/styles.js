@@ -162,20 +162,22 @@ class Styles {
     /* Controls: input + send */
     #sai-controls {
       display:flex;
-      gap:6px;
+      gap: 0;
       align-items: center;
       padding: 6px;
       border-top: 1px solid rgba(255,255,255,0.02);
       cursor: default;
       user-select: none;
+      position: relative;
     }
 
+    /* Input with buttons inside */
     #sai-input {
       flex: 1 1 auto;
       min-height: 40px;
       max-height: 160px;
       resize: none;
-      padding: 8px 10px;
+      padding: 8px 90px 8px 10px; /* Extra right padding for buttons */
       border-radius: 10px;
       border: 1px solid rgba(255,255,255,0.04);
       background: rgba(6,12,20,0.55);
@@ -186,46 +188,62 @@ class Styles {
       overflow-y: auto;
       cursor: text;
       user-select: text;
+      width: 100%;
     }
     #sai-input::placeholder { color: rgba(230,240,255,0.45); }
 
+    /* Send button - INSIDE INPUT */
     #sai-send {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
       display:flex;
       align-items:center;
       justify-content:center;
-      height: 40px;
-      width: 44px;
+      height: 32px;
+      width: 32px;
       background: linear-gradient(180deg, #0ea5e9, #0284c7);
       color: #002233;
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: transform .12s ease;
+      transition: all 0.2s ease;
       user-select: none;
+      z-index: 3;
     }
-    #sai-send:hover { background: linear-gradient(180deg, #38bdf8, #0284c7); }
-    #sai-send:active { transform: translateY(1px); }
 
-    /* Microphone button - POSITIONED BETWEEN INPUT AND SEND BUTTON */
+    #sai-send:hover { 
+      background: linear-gradient(180deg, #38bdf8, #0284c7);
+      transform: translateY(-50%) scale(1.05);
+    }
+    #sai-send:active { transform: translateY(-50%) scale(0.95); }
+
+    /* Microphone button - INSIDE INPUT (left of send button) */
     #sai-mic {
+      position: absolute;
+      right: 46px; /* Positioned to the left of send button */
+      top: 50%;
+      transform: translateY(-50%);
       display:flex;
       align-items:center;
       justify-content:center;
-      height: 40px;
-      width: 44px;
+      height: 32px;
+      width: 32px;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255,255,255,0.08);
       color: #9fb4d6;
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.3s ease;
       user-select: none;
-      order: 2; /* Positions it between input (1) and send (3) */
+      z-index: 3;
     }
 
     #sai-mic:hover {
       background: rgba(255, 255, 255, 0.08);
       color: #7dd3fc;
+      transform: translateY(-50%) scale(1.05);
     }
 
     #sai-mic.recording {
@@ -254,10 +272,10 @@ class Styles {
     /* Voice recording indicator */
     .sai-recording-indicator {
       position: absolute;
-      top: -8px;
-      right: -8px;
-      width: 12px;
-      height: 12px;
+      top: -4px;
+      right: -4px;
+      width: 8px;
+      height: 8px;
       background: #ef4444;
       border-radius: 50%;
       animation: sai-recording-pulse 1s infinite;
@@ -540,10 +558,16 @@ class Styles {
         right: 8px;
       }
       #sai-mic {
-        width: 40px;
+        width: 30px;
+        height: 30px;
+        right: 42px;
       }
       #sai-send {
-        width: 40px;
+        width: 30px;
+        height: 30px;
+      }
+      #sai-input {
+        padding-right: 80px;
       }
     }
     `;
