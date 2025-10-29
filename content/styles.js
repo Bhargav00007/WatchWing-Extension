@@ -28,7 +28,7 @@ class Styles {
     }
     #sai-btn:hover { background: linear-gradient(180deg, #111c3a, #0d162e); opacity: 0.85; }
 
-    /* Chat panel (dark, no shadow, tighter padding) - NOW RESIZABLE */
+    /* Chat panel (dark, no shadow, tighter padding) - RESIZABLE */
     #sai-chat {
       display:flex;
       flex-direction: column;
@@ -36,7 +36,7 @@ class Styles {
       max-width: calc(100vw - 48px);
       min-height: 320px;
       max-height: 80vh;
-      height: 420px; /* Default height */
+      height: 600px;
       background: linear-gradient(180deg, #071028, #0b1220);
       border-radius: 14px;
       border: 1px solid rgba(255,255,255,0.04);
@@ -85,7 +85,7 @@ class Styles {
     }
     #sai-close:hover { background: rgba(255,255,255,0.02); color: #ffffff; }
 
-    /* Body (response container) - NOW FLEXIBLE */
+    /* Body (response container) - FLEXIBLE */
     #sai-body {
       position: relative;
       flex: 1 1 auto;
@@ -98,7 +98,7 @@ class Styles {
       min-height: 120px;
     }
 
-    /* Response area - NOW SCROLLABLE AND FLEXIBLE */
+    /* Response area - SCROLLABLE AND FLEXIBLE */
     #sai-response {
       width: 100%;
       height: 100%;
@@ -108,11 +108,11 @@ class Styles {
       background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.012));
       color: #dbeafe;
       font-size: 14px;
-      line-height: 1.45;
+      line-height: 1.5;
       cursor: auto;
       user-select: text;
       flex: 1;
-      min-height: 0; /* Important for flex child scrolling */
+      min-height: 0;
     }
 
     /* Welcome message */
@@ -154,6 +154,7 @@ class Styles {
     }
     #sai-loading[aria-hidden="false"] { display:flex; }
 
+    /* FIXED: Spinner with animation */
     .sai-spinner {
       width: 44px;
       height: 44px;
@@ -163,7 +164,10 @@ class Styles {
       animation: sai-spin 1s linear infinite;
       backdrop-filter: blur(2px);
     }
-    @keyframes sai-spin { to { transform: rotate(360deg); } }
+    @keyframes sai-spin { 
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); } 
+    }
 
     .sai-loading-text {
       color: #cfeefe;
@@ -190,7 +194,7 @@ class Styles {
       min-height: 40px;
       max-height: 120px;
       resize: none;
-      padding: 8px 90px 8px 10px; /* Extra right padding for buttons */
+      padding: 2px 90px 2px 10px;
       border-radius: 10px;
       border: 1px solid rgba(255,255,255,0.04);
       background: rgba(6,12,20,0.55);
@@ -224,6 +228,8 @@ class Styles {
       transition: all 0.2s ease;
       user-select: none;
       z-index: 3;
+      margin-right:4px;
+      margin-left:2px;
     }
 
     #sai-send:hover { 
@@ -232,10 +238,10 @@ class Styles {
     }
     #sai-send:active { transform: translateY(-50%) scale(0.95); }
 
-    /* Microphone button - INSIDE INPUT (left of send button) */
+    /* Microphone button - INSIDE INPUT */
     #sai-mic {
       position: absolute;
-      right: 46px; /* Positioned to the left of send button */
+      right: 46px;
       top: 50%;
       transform: translateY(-50%);
       display:flex;
@@ -353,7 +359,6 @@ class Styles {
       cursor: pointer;
     }
 
-    /* Custom scrollbar for resizable chat */
     #sai-response::-webkit-scrollbar-track {
       background: rgba(255,255,255,0.02);
       border-radius: 8px;
@@ -363,13 +368,26 @@ class Styles {
       background: rgba(255,255,255,0.1);
     }
 
-    /* Chat bubble styles - User only */
+    /* ==================== CHAT MESSAGE STYLES ==================== */
+
     .sai-message {
-      margin-bottom: 12px;
+      margin-bottom: 20px;
       display: flex;
       flex-direction: column;
       cursor: auto;
       user-select: text;
+      animation: sai-message-appear 0.3s ease-out;
+    }
+
+    @keyframes sai-message-appear {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .sai-user-message {
@@ -378,45 +396,52 @@ class Styles {
 
     .sai-ai-message {
       align-items: flex-start;
+      position: relative;
     }
 
     .sai-user-bubble {
       background: linear-gradient(135deg, #0ea5e9, #0284c7);
       color: white;
-      padding: 10px 14px;
+      padding: 12px 16px;
       border-radius: 16px;
       border-bottom-right-radius: 6px;
       max-width: 85%;
       font-size: 14px;
-      line-height: 1.4;
+      line-height: 1.5;
       word-wrap: break-word;
       cursor: auto;
       user-select: text;
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.15);
     }
 
     .sai-ai-content {
       background: rgba(255, 255, 255, 0.03);
-      padding: 12px;
-      border-radius: 10px;
+      padding: 16px;
+      border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.05);
-      margin-top: 4px;
+      margin-top: 6px;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.7;
       color: #e6f4ff;
       cursor: auto;
       user-select: text;
       word-wrap: break-word;
       overflow-wrap: break-word;
       position: relative;
+      max-width: 100%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .sai-sender {
       font-size: 12px;
       font-weight: 600;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       padding: 0 4px;
       cursor: default;
       user-select: none;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.8;
     }
 
     .sai-user-sender {
@@ -429,7 +454,155 @@ class Styles {
       text-align: left;
     }
 
-    /* Text formatting styles for AI responses */
+    /* ==================== ENHANCED CONTENT FORMATTING ==================== */
+
+    /* Paragraphs with better spacing */
+    .sai-paragraph {
+      margin: 0 0 16px 0;
+      line-height: 1.7;
+      color: #e6f4ff;
+    }
+
+    .sai-paragraph:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Bold headings in vibrant blue - STACKED LAYOUT */
+    .sai-bold-heading {
+      color: #60a5fa;
+      font-weight: 700;
+      display: block;
+      margin: 14px 0 8px 0;
+      line-height: 1.4;
+      font-size: 15px;
+    }
+
+    /* Section container */
+    .sai-section {
+      margin: 16px 0;
+    }
+
+    /* ==================== BEAUTIFUL LIST STYLING - STACKED LAYOUT ==================== */
+
+    /* Bullet list styling - VERTICAL LAYOUT */
+    .sai-bullet-list {
+      margin: 14px 0;
+      padding: 0;
+    }
+
+    .sai-bullet-item {
+      display: flex;
+      flex-direction: column;
+      margin: 12px 0;
+      line-height: 1.7;
+      padding-left: 4px;
+    }
+
+    .sai-bullet {
+      color: #60a5fa;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .sai-bullet-content {
+      color: #e6f4ff;
+      padding-left: 20px;
+    }
+
+    /* Numbered list styling - VERTICAL LAYOUT */
+    .sai-numbered-list {
+      margin: 14px 0;
+      padding: 0;
+    }
+
+    .sai-numbered-item {
+      display: flex;
+      flex-direction: column;
+      margin: 12px 0;
+      line-height: 1.7;
+      padding-left: 4px;
+    }
+
+    .sai-number {
+      color: #60a5fa;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .sai-numbered-content {
+      color: #e6f4ff;
+      padding-left: 24px;
+    }
+
+    /* ==================== CLICKABLE LINKS STYLING ==================== */
+
+    /* YouTube timestamp links - Vibrant and clear */
+    .sai-timestamp-link {
+      color: #60a5fa !important;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 600;
+      display: inline;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(96, 165, 250, 0.08);
+      border: 1px solid rgba(96, 165, 250, 0.2);
+    }
+
+    .sai-timestamp-link:hover {
+      color: #93c5fd !important;
+      background: rgba(96, 165, 250, 0.15);
+      border-color: rgba(96, 165, 250, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(96, 165, 250, 0.2);
+    }
+
+    .sai-timestamp-link:active {
+      color: #38bdf8 !important;
+      transform: translateY(0);
+    }
+
+    /* Regular URL links */
+    .sai-url-link {
+      color: #7dd3fc !important;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      word-break: break-all;
+      display: inline;
+    }
+
+    .sai-url-link:hover {
+      color: #a5f3fc !important;
+      text-decoration-thickness: 2px;
+      background: rgba(125, 211, 252, 0.08);
+      padding: 0 3px;
+      border-radius: 3px;
+    }
+
+    /* Email links */
+    .sai-email-link {
+      color: #7dd3fc !important;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .sai-email-link:hover {
+      color: #a5f3fc !important;
+      background: rgba(125, 211, 252, 0.08);
+      padding: 0 3px;
+      border-radius: 3px;
+    }
+
+    /* ==================== TEXT FORMATTING ==================== */
+
     .sai-ai-content b, .sai-ai-content strong {
       font-weight: 700;
       color: #a7e3ff;
@@ -440,140 +613,172 @@ class Styles {
       color: #cfeefe;
     }
     
-    .sai-ai-content h1, .sai-ai-content h2, .sai-ai-content h3 {
+    .sai-ai-content h1, .sai-ai-content h2, .sai-ai-content h3, .sai-ai-content h4 {
       font-weight: 700;
-      margin: 12px 0 8px 0;
-      color: #7dd3fc;
+      margin: 18px 0 10px 0;
+      color: #60a5fa;
+      line-height: 1.3;
     }
     
-    .sai-ai-content h1 {
+    .sai-ai-content h1, .sai-h2 {
+      font-size: 17px;
+      border-bottom: 2px solid rgba(96, 165, 250, 0.25);
+      padding-bottom: 8px;
+      margin-top: 20px;
+    }
+    
+    .sai-ai-content h2, .sai-h3 {
       font-size: 16px;
-      border-bottom: 1px solid rgba(125, 211, 252, 0.2);
-      padding-bottom: 4px;
+      margin-top: 16px;
     }
     
-    .sai-ai-content h2 {
+    .sai-ai-content h3, .sai-h4 {
       font-size: 15px;
-    }
-    
-    .sai-ai-content h3 {
-      font-size: 14px;
+      margin-top: 14px;
     }
     
     .sai-ai-content p {
-      margin: 8px 0;
+      margin: 12px 0;
+      line-height: 1.7;
     }
     
     .sai-ai-content ul, .sai-ai-content ol {
-      margin: 8px 0;
-      padding-left: 20px;
+      margin: 12px 0;
+      padding-left: 24px;
     }
     
     .sai-ai-content li {
-      margin: 4px 0;
+      margin: 8px 0;
+      line-height: 1.7;
     }
     
-    .sai-ai-content hr {
+    .sai-ai-content hr, .sai-divider {
       border: none;
       border-top: 1px solid rgba(255,255,255,0.1);
-      margin: 12px 0;
+      margin: 20px 0;
     }
     
-    .sai-ai-content code {
-      background: rgba(255,255,255,0.05);
-      padding: 2px 6px;
-      border-radius: 4px;
+    .sai-ai-content code, .sai-inline-code {
+      background: rgba(255,255,255,0.08);
+      padding: 3px 7px;
+      border-radius: 5px;
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       font-size: 13px;
       color: #bae6fd;
       cursor: text;
       user-select: text;
+      border: 1px solid rgba(255,255,255,0.06);
     }
     
     .sai-ai-content blockquote {
-      border-left: 3px solid rgba(125, 211, 252, 0.4);
-      margin: 8px 0;
-      padding-left: 12px;
+      border-left: 4px solid rgba(96, 165, 250, 0.5);
+      margin: 16px 0;
+      padding-left: 16px;
       color: #cfeefe;
+      font-style: italic;
+      background: rgba(96, 165, 250, 0.03);
+      padding: 12px 16px;
+      border-radius: 6px;
     }
 
-    /* Selection styles for better readability */
+    /* Better line breaks */
+    .sai-ai-content br {
+      content: "";
+      display: block;
+      margin: 6px 0;
+    }
+
+    /* Selection styles */
     .sai-ai-content ::selection,
     .sai-user-bubble ::selection,
     #sai-response ::selection {
-      background: rgba(14, 165, 233, 0.3);
+      background: rgba(96, 165, 250, 0.35);
       color: #ffffff;
     }
 
     .sai-ai-content ::-moz-selection,
     .sai-user-bubble ::-moz-selection,
     #sai-response ::-moz-selection {
-      background: rgba(14, 165, 233, 0.3);
+      background: rgba(96, 165, 250, 0.35);
       color: #ffffff;
     }
 
-    /* Copy button for AI responses */
+    /* ==================== COPY & VOICE BUTTONS ==================== */
+
+    /* Copy button */
     .sai-copy-button {
       position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(255, 255, 255, 0.1);
+      top: 12px;
+      right: 12px;
+      background: rgba(255, 255, 255, 0.08);
       border: none;
       border-radius: 6px;
       color: #9fb4d6;
-      padding: 4px 8px;
+      padding: 6px 8px;
       font-size: 11px;
       cursor: pointer;
       opacity: 0;
-      transition: opacity 0.2s ease, background 0.2s ease;
-      backdrop-filter: blur(4px);
-      z-index: 2;
-    }
-
-    .sai-copy-button:hover {
-      background: rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-    }
-
-    /* Voice button for AI responses */
-    .sai-voice-button {
-      position: absolute;
-      top: 8px;
-      right: 60px;
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      border-radius: 6px;
-      color: #9fb4d6;
-      padding: 4px 8px;
-      font-size: 11px;
-      cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.2s ease, background 0.2s ease;
+      transition: all 0.2s ease;
       backdrop-filter: blur(4px);
       z-index: 2;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 24px;
+      width: 28px;
+      height: 28px;
+    }
+
+    .sai-copy-button:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      transform: scale(1.05);
+    }
+
+    .sai-copy-button.copied {
+      color: #4ade80;
+      background: rgba(74, 222, 128, 0.15);
+    }
+
+    /* Voice button */
+    .sai-voice-button {
+      position: absolute;
+      top: 12px;
+      right: 46px;
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      border-radius: 6px;
+      color: #9fb4d6;
+      padding: 6px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(4px);
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
     }
 
     .sai-voice-button:hover {
       background: rgba(255, 255, 255, 0.15);
       color: #7dd3fc;
+      transform: scale(1.05);
     }
 
     .sai-voice-button.playing {
       color: #7dd3fc;
-      background: rgba(125, 211, 252, 0.1);
-    }
-
-    .sai-voice-button.playing:hover {
       background: rgba(125, 211, 252, 0.15);
     }
 
-    .sai-ai-message {
-      position: relative;
+    .sai-voice-button.playing:hover {
+      background: rgba(125, 211, 252, 0.2);
+    }
+
+    .sai-voice-button.loading {
+      background: rgba(125, 211, 252, 0.1);
     }
 
     .sai-ai-message:hover .sai-copy-button,
@@ -581,31 +786,48 @@ class Styles {
       opacity: 1;
     }
 
-    /* Voice controls container */
-    .sai-voice-controls {
-      display: flex;
-      gap: 4px;
-      position: absolute;
-      top: 8px;
-      right: 8px;
-    }
-
     /* Voice loading indicator */
     .sai-voice-loading {
       display: inline-block;
-      width: 12px;
-      height: 12px;
+      width: 14px;
+      height: 14px;
       border: 2px solid #7dd3fc;
       border-radius: 50%;
       border-top-color: transparent;
-      animation: sai-voice-spin 1s ease-in-out infinite;
+      animation: sai-voice-spin 0.8s ease-in-out infinite;
     }
 
     @keyframes sai-voice-spin {
+      from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
 
-    /* Responsive adjustments */
+    /* Error message styling */
+    .sai-error-message {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 10px;
+      padding: 14px;
+      margin: 10px 0;
+      color: #fca5a5;
+      font-size: 13px;
+      line-height: 1.6;
+      animation: sai-error-appear 0.3s ease-out;
+    }
+
+    @keyframes sai-error-appear {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* ==================== RESPONSIVE ADJUSTMENTS ==================== */
+
     @media (max-width: 400px) {
       #sai-chat {
         width: calc(100vw - 40px);
@@ -617,10 +839,14 @@ class Styles {
       }
       
       .sai-voice-button {
-        right: 55px;
+        right: 40px;
+        width: 26px;
+        height: 26px;
       }
       .sai-copy-button {
-        right: 8px;
+        right: 10px;
+        width: 26px;
+        height: 26px;
       }
       #sai-mic {
         width: 30px;
@@ -636,7 +862,16 @@ class Styles {
       }
       
       .sai-resize-handle {
-        opacity: 0.5; /* Always visible on mobile */
+        opacity: 0.5;
+      }
+
+      .sai-ai-content {
+        padding: 14px;
+      }
+
+      .sai-bullet-item,
+      .sai-numbered-item {
+        margin: 8px 0;
       }
     }
 
@@ -645,6 +880,38 @@ class Styles {
       #sai-chat {
         min-height: 280px;
         max-height: 75vh;
+      }
+    }
+
+    /* High contrast mode */
+    @media (prefers-contrast: high) {
+      .sai-timestamp-link {
+        text-decoration-thickness: 2px;
+        border-width: 2px;
+      }
+      
+      .sai-url-link {
+        text-decoration-thickness: 2px;
+      }
+      
+      .sai-bold-heading {
+        font-weight: 800;
+      }
+    }
+
+    /* Print styles */
+    @media print {
+      #sai-panel, #sai-btn {
+        display: none !important;
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
       }
     }
     `;

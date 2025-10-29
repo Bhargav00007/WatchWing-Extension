@@ -80,6 +80,21 @@
       // This will ensure the chat doesn't exceed viewport bounds
       SessionManager.saveSessionData();
     });
+
+    // Handle clicks on dynamically created links - PREVENT PAGE REFRESH
+    document.addEventListener("click", (e) => {
+      if (
+        e.target.matches(
+          ".sai-clickable-link, .sai-clickable-timestamp, .sai-clickable-email"
+        )
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Let the onclick handler in the link handle the action
+        // This prevents default browser behavior that causes page refresh
+      }
+    });
   }
 
   // Global access for external control
@@ -113,6 +128,8 @@
       // External API to resize the chat window
       UIManager.setChatHeight(height);
     },
+    // Expose the timestamp function globally
+    seekToTimestamp: (seconds) => ChatManager.seekToTimestamp(seconds),
   };
 
   // Initialize when DOM is ready

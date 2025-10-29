@@ -14,46 +14,61 @@
         justify-content: center;
         align-items: center;
         min-height: 100vh;
+        width: 400px;
+        padding: 20px;
+        box-sizing: border-box;
       }
 
       /* Container */
       #sai-panel {
         position: relative;
-        width: 360px;
+        width: 100%;
         background: linear-gradient(180deg, #071028, #0b1220);
         border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: 14px;
-        padding: 10px;
+        padding: 20px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 20px;
+        align-items: center;
       }
 
       /* Header */
       #sai-header {
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
         align-items: center;
+        gap: 8px;
+        text-align: center;
       }
 
       #sai-title {
         font-weight: 700;
-        font-size: 18px;
+        font-size: 24px;
         color: #e8f3ff;
+        letter-spacing: 0.5px;
       }
 
       #sai-version {
-        font-size: 11px;
+        font-size: 12px;
         color: #9fb4d6;
-        margin-top: 2px;
+        opacity: 0.8;
       }
 
       /* Switch container */
-      #switch-container {
+      .switch-container {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-top: 6px;
+        width: 100%;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .switch-label {
+        font-size: 14px;
+        color: #e6eef8;
+        font-weight: 500;
       }
 
       .switch {
@@ -76,7 +91,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: #444;
+        background-color: #374151;
         transition: 0.4s;
         border-radius: 34px;
       }
@@ -103,54 +118,31 @@
 
       /* Footer */
       footer {
-        position: fixed;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
         font-size: 11px;
         color: #9fb4d6;
-        margin-top: 20px;
+        text-align: center;
+        margin-top: 15px;
+        opacity: 0.7;
+      }
+
+      /* Description */
+      .description {
+        font-size: 12px;
+        color: #9fb4d6;
+        text-align: center;
+        line-height: 1.4;
+        margin-top: 5px;
       }
     </style>
   </head>
   <body>
     <div id="sai-panel">
       <div id="sai-header">
-        <div>
-          <div id="sai-title">Watchwing</div>
-          <div id="sai-version">version: 1.0.0</div>
-        </div>
+        <div id="sai-title">Watchwing AI</div>
+        <div id="sai-version">version: 1.0.0</div>
       </div>
 
-      <!-- <div id="switch-container">
-        <span>Watchwing AI on screen</span>
-        <label class="switch">
-          <input type="checkbox" id="toggle-ai" checked />
-          <span class="slider"></span>
-        </label>
-      </div> -->
+      <footer>Made with ❤️ by Bhargav</footer>
     </div>
-
-    <footer>Made with ❤️ by Bhargav</footer>
-
-    <script>
-      const toggle = document.getElementById("toggle-ai");
-
-      function updateBtn() {
-        // Send message to the content script to show/hide the floating Ask AI button
-        const show = toggle.checked;
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          chrome.tabs.sendMessage(tabs[0].id, {
-            action: "toggleAskBtn",
-            show: show,
-          });
-        });
-      }
-
-      toggle.addEventListener("change", updateBtn);
-
-      // Initial state
-      updateBtn();
-    </script>
   </body>
 </html>

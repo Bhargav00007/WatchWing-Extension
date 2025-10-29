@@ -15,21 +15,43 @@ class ChatManager {
     lastVoiceInput: false,
   };
 
+  static currentUrl = "";
+  static currentTitle = "";
+
   static initialize(backendUrl) {
     this.BACKEND_URL = backendUrl;
     this.setupChatEventListeners();
     this.initializeVoices();
     this.initializeSpeechRecognition();
+    this.loadCurrentUrl();
+  }
+
+  static async loadCurrentUrl() {
+    try {
+      return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: "getCurrentUrl" }, (response) => {
+          if (response && response.success) {
+            this.currentUrl = response.url;
+            this.currentTitle = response.title;
+          } else {
+            this.currentUrl = window.location.href;
+            this.currentTitle = document.title;
+          }
+          resolve();
+        });
+      });
+    } catch (error) {
+      this.currentUrl = window.location.href;
+      this.currentTitle = document.title;
+    }
   }
 
   static initializeVoices() {
-    // Pre-load voices when available
     if ("speechSynthesis" in window) {
       speechSynthesis.onvoiceschanged = () => {
         console.log("Voices loaded:", speechSynthesis.getVoices().length);
       };
 
-      // Trigger voices loading
       const voices = speechSynthesis.getVoices();
       if (voices.length === 0) {
         setTimeout(() => {
@@ -40,7 +62,6 @@ class ChatManager {
   }
 
   static initializeSpeechRecognition() {
-    // Check if speech recognition is available
     if (
       !("webkitSpeechRecognition" in window) &&
       !("SpeechRecognition" in window)
@@ -49,18 +70,15 @@ class ChatManager {
       return;
     }
 
-    // Create speech recognition instance
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
     this.voiceInput.recognition = new SpeechRecognition();
 
-    // Configure recognition
     this.voiceInput.recognition.continuous = false;
     this.voiceInput.recognition.interimResults = true;
     this.voiceInput.recognition.lang = "en-US";
     this.voiceInput.recognition.maxAlternatives = 1;
 
-    // Set up event handlers
     this.voiceInput.recognition.onstart = () => {
       console.log("Speech recognition started");
       this.setRecordingState(true);
@@ -79,7 +97,6 @@ class ChatManager {
         }
       }
 
-      // Update input with the transcribed text
       const input = UIManager.elements.input;
       if (finalTranscript) {
         input.value = finalTranscript;
@@ -149,7 +166,7 @@ class ChatManager {
   static startVoiceInput() {
     try {
       this.voiceInput.recognition.start();
-      this.voiceInput.lastVoiceInput = true; // Mark that this input came from voice
+      this.voiceInput.lastVoiceInput = true;
     } catch (error) {
       console.error("Error starting speech recognition:", error);
       this.showError(
@@ -170,16 +187,13 @@ class ChatManager {
   static setupChatEventListeners() {
     const { btn, input, send, closeBtn } = UIManager.elements;
 
-    // Toggle UI
     btn.addEventListener("click", () => UIManager.openChat());
     closeBtn.addEventListener("click", () => UIManager.closeChat());
 
-    // Send message
     send.addEventListener("click", async () => {
       await this.doSend();
     });
 
-    // Enter to send (Shift+Enter for newline)
     input.addEventListener("keydown", async (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
@@ -187,13 +201,11 @@ class ChatManager {
       }
     });
 
-    // Auto-size textarea
     input.addEventListener("input", (e) => {
       UIManager.autoSizeTextarea(e.target);
     });
     UIManager.autoSizeTextarea(input);
 
-    // Button accessibility
     btn.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
@@ -201,7 +213,6 @@ class ChatManager {
       }
     });
 
-    // Microphone button
     const micButton = document.getElementById("sai-mic");
     if (micButton) {
       micButton.addEventListener("click", () => {
@@ -216,16 +227,13 @@ class ChatManager {
       "Describe what's in this screen.";
     if (!prompt) return;
 
-    // Stop any ongoing speech when sending new message
     this.stopSpeech();
 
-    // Stop voice recording if active
     if (this.voiceInput.isRecording) {
       this.stopVoiceInput();
     }
 
-    // Add user message to chat history and display
-    SessionManager.chatHistory.push({ role: "user", content: prompt });
+    SessionManager.addMessage("user", prompt);
     this.appendMessage("user", prompt);
 
     UIManager.elements.input.value = "";
@@ -236,7 +244,7 @@ class ChatManager {
     this.startProgressiveLoading();
 
     try {
-      // Hide chat before capturing
+      await this.loadCurrentUrl();
       await UIManager.hideForCapture();
 
       const captureResp = await new Promise((resolve, reject) => {
@@ -251,12 +259,10 @@ class ChatManager {
         throw new Error(captureResp.error || "capture failed");
       }
 
-      // Show chat again and continue
       UIManager.showAfterCapture();
 
       const dataUrl = captureResp.dataUrl;
 
-      // Prepare conversation context
       const conversationContext = SessionManager.chatHistory
         .slice(-6)
         .map(
@@ -269,7 +275,10 @@ class ChatManager {
         image: dataUrl,
         prompt: prompt,
         conversationHistory: conversationContext,
+        currentUrl: this.currentUrl,
       };
+
+      console.log("Sending request with URL:", this.currentUrl);
 
       const res = await fetch(this.BACKEND_URL + "/api/describe", {
         method: "POST",
@@ -286,53 +295,133 @@ class ChatManager {
 
       this.hideLoading();
 
-      // AI reply with formatted text
       const aiResponse = json.text || json.result || "No result from AI.";
-      const formattedResponse = ResponseFormatter.formatAiResponse(aiResponse);
 
-      // Add AI message to chat history and display
-      SessionManager.chatHistory.push({
-        role: "assistant",
-        content: aiResponse,
-      });
+      const formattedResponse = this.processClickableContent(
+        aiResponse,
+        this.currentUrl
+      );
+
+      SessionManager.addMessage("assistant", aiResponse);
       const messageElement = this.appendMessage("ai", formattedResponse, true);
 
-      // Save updated chat history
       SessionManager.saveSessionData();
 
-      // Store the plain text for speech synthesis
       messageElement.setAttribute("data-plain-text", aiResponse);
 
-      // Auto-speak the response if the input came from voice
       if (this.voiceInput.lastVoiceInput) {
         const voiceButton = messageElement.querySelector(".sai-voice-button");
         const contentDiv = messageElement.querySelector(".sai-ai-content");
         if (voiceButton && contentDiv) {
-          // Small delay to ensure UI is ready
           setTimeout(() => {
             this.speakMessage(messageElement, contentDiv, voiceButton);
           }, 500);
         }
       }
 
-      // Reset voice input flag
       this.voiceInput.lastVoiceInput = false;
     } catch (err) {
-      // Make sure chat is visible even if there's an error
       UIManager.showAfterCapture();
       this.hideLoading();
       console.error(err);
       this.showError(err.message || String(err));
-
-      // Reset voice input flag on error too
       this.voiceInput.lastVoiceInput = false;
     }
   }
 
+  // FIXED: Process clickable content - clean timestamps only
+  static processClickableContent(text, currentUrl) {
+    if (!text) return text;
+
+    let processedText = text;
+
+    // Check if we're on YouTube
+    const isYouTube =
+      currentUrl &&
+      (currentUrl.includes("youtube.com") || currentUrl.includes("youtu.be"));
+
+    let currentVideoId = null;
+    if (isYouTube) {
+      const videoIdMatch = currentUrl.match(
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
+      );
+      currentVideoId = videoIdMatch ? videoIdMatch[1] : null;
+    }
+
+    // STEP 1: Remove any existing malformed YouTube URLs that appear before timestamps
+    if (currentVideoId) {
+      processedText = processedText.replace(
+        /https:\/\/www\.youtube\.com\/watch\?v=[a-zA-Z0-9_-]+&t=\d+s["\s]*target="_blank">\[https:\/\/[^\]]+\]/g,
+        ""
+      );
+
+      processedText = processedText.replace(
+        /https:\/\/www\.youtube\.com\/watch\?v=[a-zA-Z0-9_-]+&t=\d+s["\s]*target="_blank">/g,
+        ""
+      );
+    }
+
+    // STEP 2: Handle YouTube timestamps - Convert to clean clickable timestamps
+    if (currentVideoId) {
+      // Handle timestamps in format [MM:SS] or (MM:SS)
+      processedText = processedText.replace(
+        /[\[\(](\d{1,2}):(\d{2})[\]\)]/g,
+        (match, minutes, seconds) => {
+          const totalSeconds = parseInt(minutes) * 60 + parseInt(seconds);
+          const timestampUrl = `https://www.youtube.com/watch?v=${currentVideoId}&t=${totalSeconds}s`;
+          const displayTime = `${minutes}:${seconds}`;
+          return `<a class="sai-timestamp-link" href="${timestampUrl}" target="_blank">[${displayTime}]</a>`;
+        }
+      );
+
+      // Handle standalone timestamps in format MM:SS (not already linked)
+      processedText = processedText.replace(
+        /(?<![\w\/=\-])(\d{1,2}):(\d{2})(?![\w\]])/g,
+        (match, minutes, seconds) => {
+          const totalSeconds = parseInt(minutes) * 60 + parseInt(seconds);
+          const timestampUrl = `https://www.youtube.com/watch?v=${currentVideoId}&t=${totalSeconds}s`;
+          const displayTime = `${minutes}:${seconds}`;
+          return `<a class="sai-timestamp-link" href="${timestampUrl}" target="_blank">[${displayTime}]</a>`;
+        }
+      );
+
+      // Handle seconds-only timestamps like "570s"
+      processedText = processedText.replace(
+        /(?<![\w\/=\-])(\d+)s(?![\w\]])/g,
+        (match, seconds) => {
+          const totalSeconds = parseInt(seconds);
+          const minutes = Math.floor(totalSeconds / 60);
+          const remainingSeconds = totalSeconds % 60;
+          const displayTime = `${minutes}:${remainingSeconds
+            .toString()
+            .padStart(2, "0")}`;
+          const timestampUrl = `https://www.youtube.com/watch?v=${currentVideoId}&t=${totalSeconds}s`;
+          return `<a class="sai-timestamp-link" href="${timestampUrl}" target="_blank">[${displayTime}]</a>`;
+        }
+      );
+    }
+
+    // STEP 3: Make regular URLs clickable (but avoid already processed content)
+    processedText = processedText.replace(
+      /(?<!href=["'])(?<!href=)(https?:\/\/(?!www\.youtube\.com\/watch)[^\s<"']+)(?!["'])/g,
+      (match) => {
+        return `<a href="${match}" target="_blank" class="sai-url-link">${match}</a>`;
+      }
+    );
+
+    // STEP 4: Make email addresses clickable
+    processedText = processedText.replace(
+      /(?<![\w@])([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})(?![\w])/g,
+      '<a href="mailto:$1" class="sai-email-link">$1</a>'
+    );
+
+    return processedText;
+  }
+
+  // UPDATED: Append message with beautiful formatting
   static appendMessage(sender, content, isFormatted = false) {
     const responseEl = UIManager.elements.responseEl;
 
-    // Clear welcome message if it's the first actual message
     if (responseEl.querySelector(".sai-welcome-message")) {
       responseEl.innerHTML = "";
     }
@@ -351,52 +440,182 @@ class ChatManager {
     messageDiv.appendChild(senderDiv);
 
     if (sender === "user") {
-      // User message with bubble
       const bubbleDiv = document.createElement("div");
       bubbleDiv.className = "sai-user-bubble";
       bubbleDiv.textContent = content;
       messageDiv.appendChild(bubbleDiv);
     } else {
-      // AI message without bubble, just formatted content
       const contentDiv = document.createElement("div");
       contentDiv.className = "sai-ai-content";
+
       if (isFormatted) {
-        contentDiv.innerHTML = content;
+        const cleanedContent = this.cleanAIResponse(content);
+        contentDiv.innerHTML = cleanedContent;
       } else {
         contentDiv.textContent = content;
       }
       messageDiv.appendChild(contentDiv);
 
-      // Add copy button for AI responses
       this.addCopyButton(messageDiv, contentDiv);
-
-      // Add voice button for AI responses
       this.addVoiceButton(messageDiv, contentDiv);
     }
 
     responseEl.appendChild(messageDiv);
-
-    // Scroll to show the start of new content
     messageDiv.scrollIntoView({ behavior: "smooth", block: "start" });
 
     return messageDiv;
   }
 
+  // ENHANCED: Clean AI response with better line breaks
+  static cleanAIResponse(text) {
+    if (!text) return text;
+
+    let cleaned = text;
+
+    cleaned = cleaned
+      .replace(/\r\n/g, "\n")
+      .replace(/\n\s*\n\s*\n+/g, "\n\n")
+      .trim();
+
+    cleaned = this.formatBoldHeadings(cleaned);
+    cleaned = this.formatBulletPoints(cleaned);
+    cleaned = this.formatNumberedLists(cleaned);
+    cleaned = this.formatParagraphs(cleaned);
+
+    return cleaned;
+  }
+
+  static formatBoldHeadings(text) {
+    return text.replace(
+      /\*\*(.*?)\*\*/g,
+      '<strong class="sai-bold-heading">$1</strong>'
+    );
+  }
+
+  static formatBulletPoints(text) {
+    const lines = text.split("\n");
+    let result = [];
+    let inList = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      if (line.match(/^[•\*\-]\s+/)) {
+        const content = line.replace(/^[•\*\-]\s+/, "");
+        if (!inList) {
+          result.push('<div class="sai-bullet-list">');
+          inList = true;
+        }
+        result.push(
+          `<div class="sai-bullet-item"><span class="sai-bullet">•</span><span class="sai-bullet-content">${content}</span></div>`
+        );
+      } else {
+        if (inList) {
+          result.push("</div>");
+          inList = false;
+        }
+        result.push(line);
+      }
+    }
+
+    if (inList) {
+      result.push("</div>");
+    }
+
+    return result.join("\n");
+  }
+
+  static formatNumberedLists(text) {
+    const lines = text.split("\n");
+    let result = [];
+    let inList = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      if (line.match(/^\d+\.\s+/)) {
+        const match = line.match(/^(\d+)\.\s+(.+)$/);
+        if (match) {
+          const number = match[1];
+          const content = match[2];
+          if (!inList) {
+            result.push('<div class="sai-numbered-list">');
+            inList = true;
+          }
+          result.push(
+            `<div class="sai-numbered-item"><span class="sai-number">${number}.</span><span class="sai-numbered-content">${content}</span></div>`
+          );
+        }
+      } else {
+        if (inList) {
+          result.push("</div>");
+          inList = false;
+        }
+        result.push(line);
+      }
+    }
+
+    if (inList) {
+      result.push("</div>");
+    }
+
+    return result.join("\n");
+  }
+
+  static formatParagraphs(text) {
+    const paragraphs = text.split("\n\n");
+    let result = [];
+
+    for (let para of paragraphs) {
+      para = para.trim();
+      if (!para) continue;
+
+      if (
+        para.includes("sai-bullet-list") ||
+        para.includes("sai-numbered-list") ||
+        para.includes("sai-bold-heading")
+      ) {
+        result.push(para);
+      } else if (para.includes("<strong")) {
+        result.push(`<div class="sai-section">${para}</div>`);
+      } else {
+        const lines = para.split("\n").filter((l) => l.trim());
+        if (lines.length > 0) {
+          result.push(`<p class="sai-paragraph">${lines.join("<br>")}</p>`);
+        }
+      }
+    }
+
+    return result.join("");
+  }
+
   static addCopyButton(messageDiv, contentDiv) {
     const copyButton = document.createElement("button");
     copyButton.className = "sai-copy-button";
-    copyButton.textContent = "Copy";
+    copyButton.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+      </svg>
+    `;
     copyButton.title = "Copy response to clipboard";
 
     copyButton.addEventListener("click", (e) => {
       e.stopPropagation();
       const textToCopy = contentDiv.textContent || contentDiv.innerText;
       if (this.copyToClipboard(textToCopy)) {
-        copyButton.textContent = "Copied!";
-        copyButton.style.color = "#4ade80";
+        copyButton.classList.add("copied");
+        copyButton.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          </svg>
+        `;
         setTimeout(() => {
-          copyButton.textContent = "Copy";
-          copyButton.style.color = "";
+          copyButton.classList.remove("copied");
+          copyButton.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+            </svg>
+          `;
         }, 2000);
       }
     });
@@ -408,7 +627,7 @@ class ChatManager {
     const voiceButton = document.createElement("button");
     voiceButton.className = "sai-voice-button";
     voiceButton.innerHTML = `
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
       </svg>
     `;
@@ -423,7 +642,6 @@ class ChatManager {
   }
 
   static toggleSpeech(messageDiv, contentDiv, voiceButton) {
-    // If this message is already being spoken, toggle pause/play
     if (
       this.currentSpeech.currentMessage === messageDiv &&
       this.currentSpeech.isPlaying
@@ -431,15 +649,12 @@ class ChatManager {
       this.pauseSpeech();
       voiceButton.classList.remove("playing");
       voiceButton.innerHTML = `
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
         </svg>
       `;
     } else {
-      // Stop any current speech
       this.stopSpeech();
-
-      // Start speaking this message
       this.speakMessage(messageDiv, contentDiv, voiceButton);
     }
   }
@@ -452,19 +667,16 @@ class ChatManager {
 
     if (!plainText.trim()) return;
 
-    // Check if browser supports speech synthesis
     if (!("speechSynthesis" in window)) {
       this.showError("Text-to-speech is not supported in your browser");
       return;
     }
 
-    // Show loading state
+    voiceButton.classList.add("loading");
     voiceButton.innerHTML = `<div class="sai-voice-loading"></div>`;
 
-    // Get available voices
     const voices = speechSynthesis.getVoices();
 
-    // Enhanced voice selection for natural female voice
     const preferredFemaleVoices = [
       "Google UK English Female",
       "Microsoft Zira Desktop",
@@ -479,10 +691,8 @@ class ChatManager {
       "Microsoft David Desktop",
     ];
 
-    // Find the best available voice
     let selectedVoice = null;
 
-    // First try: Find exact matches from preferred list
     for (const voiceName of preferredFemaleVoices) {
       const voice = voices.find((v) => v.name === voiceName);
       if (voice) {
@@ -491,7 +701,6 @@ class ChatManager {
       }
     }
 
-    // Second try: Find voices with female indicators
     if (!selectedVoice) {
       selectedVoice = voices.find(
         (voice) =>
@@ -507,7 +716,6 @@ class ChatManager {
       );
     }
 
-    // Third try: Find any English voice that's not explicitly male
     if (!selectedVoice) {
       selectedVoice = voices.find(
         (voice) =>
@@ -517,15 +725,15 @@ class ChatManager {
       );
     }
 
-    // Final fallback: Use first available voice
     if (!selectedVoice && voices.length > 0) {
       selectedVoice = voices[0];
     }
 
     if (!selectedVoice) {
       this.showError("No speech voices available");
+      voiceButton.classList.remove("loading");
       voiceButton.innerHTML = `
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
         </svg>
       `;
@@ -534,22 +742,17 @@ class ChatManager {
 
     console.log("Using voice:", selectedVoice.name);
 
-    // Process text for more natural speech
     const processedText = this.processTextForSpeech(plainText);
 
-    // Create utterance with optimized settings for natural speech
     const utterance = new SpeechSynthesisUtterance(processedText);
 
-    // Advanced voice settings for natural female speech
     utterance.voice = selectedVoice;
-    utterance.rate = 0.95; // Slightly slower for more natural cadence
-    utterance.pitch = 1.2; // Higher pitch for female voice
+    utterance.rate = 0.95;
+    utterance.pitch = 1.2;
     utterance.volume = 1;
 
-    // Add slight pauses for better natural flow
     utterance.text = this.addSpeechPauses(utterance.text);
 
-    // Store current speech state
     this.currentSpeech = {
       utterance: utterance,
       isPlaying: true,
@@ -557,15 +760,14 @@ class ChatManager {
       currentButton: voiceButton,
     };
 
-    // Update button to show pause icon
     voiceButton.classList.add("playing");
+    voiceButton.classList.remove("loading");
     voiceButton.innerHTML = `
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
         <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
       </svg>
     `;
 
-    // Set up event listeners
     utterance.onstart = () => {
       console.log("Speech started with voice:", selectedVoice.name);
     };
@@ -579,32 +781,26 @@ class ChatManager {
       this.stopSpeech();
     };
 
-    // Use a small delay to ensure proper voice loading
     setTimeout(() => {
       try {
         speechSynthesis.speak(utterance);
       } catch (error) {
-        console.error("Error starting speech:", error);
         this.stopSpeech();
       }
     }, 50);
   }
 
   static processTextForSpeech(text) {
-    // Clean and process text for more natural speech
     let processed = text
-      // Remove markdown symbols
       .replace(/#{1,6}\s?/g, "")
       .replace(/\*\*(.*?)\*\*/g, "$1")
       .replace(/\*(.*?)\*/g, "$1")
       .replace(/`(.*?)`/g, "$1")
-      // Replace common abbreviations
       .replace(/\bAI\b/gi, "A I")
       .replace(/\bAPI\b/gi, "A P I")
       .replace(/\bCSS\b/gi, "C S S")
       .replace(/\bHTML\b/gi, "H T M L")
       .replace(/\bJS\b/gi, "JavaScript")
-      // Remove extra whitespace
       .replace(/\s+/g, " ")
       .trim();
 
@@ -612,7 +808,6 @@ class ChatManager {
   }
 
   static addSpeechPauses(text) {
-    // Add commas for natural pauses in longer sentences
     return text
       .replace(/([.!?])\s+([A-Z])/g, "$1, $2")
       .replace(/([^.,!?;])\s+but\s+/gi, "$1, but ")
@@ -624,6 +819,14 @@ class ChatManager {
     if (this.currentSpeech.isPlaying && this.currentSpeech.utterance) {
       speechSynthesis.pause();
       this.currentSpeech.isPlaying = false;
+
+      if (this.currentSpeech.currentButton) {
+        this.currentSpeech.currentButton.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        `;
+      }
     }
   }
 
@@ -631,6 +834,14 @@ class ChatManager {
     if (!this.currentSpeech.isPlaying && this.currentSpeech.utterance) {
       speechSynthesis.resume();
       this.currentSpeech.isPlaying = true;
+
+      if (this.currentSpeech.currentButton) {
+        this.currentSpeech.currentButton.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+          </svg>
+        `;
+      }
     }
   }
 
@@ -639,9 +850,9 @@ class ChatManager {
       speechSynthesis.cancel();
 
       if (this.currentSpeech.currentButton) {
-        this.currentSpeech.currentButton.classList.remove("playing");
+        this.currentSpeech.currentButton.classList.remove("playing", "loading");
         this.currentSpeech.currentButton.innerHTML = `
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
           </svg>
         `;
@@ -699,15 +910,16 @@ class ChatManager {
       if (msg.role === "user") {
         this.appendMessage("user", msg.content);
       } else {
-        const formattedResponse = ResponseFormatter.formatAiResponse(
-          msg.content
+        const currentUrl = this.currentUrl;
+        const processedResponse = this.processClickableContent(
+          msg.content,
+          currentUrl
         );
         const messageElement = this.appendMessage(
           "ai",
-          formattedResponse,
+          processedResponse,
           true
         );
-        // Store plain text for speech synthesis
         messageElement.setAttribute("data-plain-text", msg.content);
       }
     });
@@ -732,12 +944,11 @@ class ChatManager {
     if (!loadingEl) return;
 
     const loadingSteps = [
-      "Capturing screen ...",
+      "Capturing screen...",
       "Sending to AI for analysis...",
       "Analyzing screen content...",
       "Fetching AI insights...",
       "This may take a while...",
-      "Finalizing response...",
       "Finalizing response...",
     ];
 
@@ -770,10 +981,7 @@ class ChatManager {
   static showError(msg) {
     const responseEl = UIManager.elements.responseEl;
     const errorDiv = document.createElement("div");
-    errorDiv.style.color = "#ffb4b4";
-    errorDiv.style.fontWeight = "600";
-    errorDiv.style.padding = "10px";
-    errorDiv.style.textAlign = "center";
+    errorDiv.className = "sai-error-message";
     errorDiv.textContent = `Error: ${msg}`;
     responseEl.appendChild(errorDiv);
     errorDiv.scrollIntoView({ behavior: "smooth", block: "start" });
