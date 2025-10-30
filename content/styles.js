@@ -137,42 +137,45 @@ class Styles {
       margin: 8px 0;
     }
 
-    /* Loading overlay (centered) */
-    #sai-loading {
-      position: absolute;
-      display: none;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    /* NEW: Inline Loading Message */
+    .sai-loading-message {
+      animation: sai-message-appear 0.3s ease-out;
+    }
+
+    .sai-loading-content {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-top: 6px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .sai-inline-loading {
+      display: flex;
       align-items: center;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 10;
-      text-align: center;
-      cursor: default;
-      user-select: none;
+      gap: 12px;
     }
-    #sai-loading[aria-hidden="false"] { display:flex; }
 
-    /* FIXED: Spinner with animation */
-    .sai-spinner {
-      width: 44px;
-      height: 44px;
+    .sai-inline-spinner {
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      border: 3px solid rgba(255,255,255,0.06);
+      border: 2px solid rgba(125, 211, 252, 0.2);
       border-top-color: #7dd3fc;
-      animation: sai-spin 1s linear infinite;
-      backdrop-filter: blur(2px);
-    }
-    @keyframes sai-spin { 
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); } 
+      animation: sai-spin 0.8s linear infinite;
+      flex-shrink: 0;
     }
 
-    .sai-loading-text {
+    @keyframes sai-spin { 
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); } 
+    }
+
+    .sai-inline-loading-text {
       color: #cfeefe;
-      font-size: 13px;
-      opacity: 0.95;
+      font-size: 14px;
+      line-height: 1.5;
     }
 
     /* Controls: input + send */
@@ -467,14 +470,14 @@ class Styles {
       margin-bottom: 0;
     }
 
-    /* Bold headings in vibrant blue - STACKED LAYOUT */
+    /* Bold headings in vibrant blue - INLINE LAYOUT */
     .sai-bold-heading {
       color: #60a5fa;
       font-weight: 700;
-      display: block;
-      margin: 14px 0 8px 0;
-      line-height: 1.4;
-      font-size: 15px;
+      display: inline;
+      margin: 0;
+      line-height: 1.7;
+      font-size: 14px;
     }
 
     /* Section container */
@@ -482,9 +485,9 @@ class Styles {
       margin: 16px 0;
     }
 
-    /* ==================== BEAUTIFUL LIST STYLING - STACKED LAYOUT ==================== */
+    /* ==================== BEAUTIFUL LIST STYLING - INLINE LAYOUT ==================== */
 
-    /* Bullet list styling - VERTICAL LAYOUT */
+    /* Bullet list styling - INLINE HORIZONTAL LAYOUT */
     .sai-bullet-list {
       margin: 14px 0;
       padding: 0;
@@ -492,25 +495,28 @@ class Styles {
 
     .sai-bullet-item {
       display: flex;
-      flex-direction: column;
-      margin: 12px 0;
+      flex-direction: row;
+      align-items: flex-start;
+      margin: 8px 0;
       line-height: 1.7;
-      padding-left: 4px;
+      gap: 8px;
     }
 
     .sai-bullet {
       color: #60a5fa;
       font-weight: bold;
       font-size: 16px;
-      margin-bottom: 4px;
+      flex-shrink: 0;
+      line-height: 1.7;
     }
 
     .sai-bullet-content {
       color: #e6f4ff;
-      padding-left: 20px;
+      flex: 1;
+      line-height: 1.7;
     }
 
-    /* Numbered list styling - VERTICAL LAYOUT */
+    /* Numbered list styling - INLINE HORIZONTAL LAYOUT */
     .sai-numbered-list {
       margin: 14px 0;
       padding: 0;
@@ -518,22 +524,26 @@ class Styles {
 
     .sai-numbered-item {
       display: flex;
-      flex-direction: column;
-      margin: 12px 0;
+      flex-direction: row;
+      align-items: flex-start;
+      margin: 8px 0;
       line-height: 1.7;
-      padding-left: 4px;
+      gap: 8px;
     }
 
     .sai-number {
       color: #60a5fa;
       font-weight: 700;
       font-size: 14px;
-      margin-bottom: 4px;
+      flex-shrink: 0;
+      line-height: 1.7;
+      min-width: 24px;
     }
 
     .sai-numbered-content {
       color: #e6f4ff;
-      padding-left: 24px;
+      flex: 1;
+      line-height: 1.7;
     }
 
     /* ==================== CLICKABLE LINKS STYLING ==================== */
@@ -798,8 +808,8 @@ class Styles {
     }
 
     @keyframes sai-voice-spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     /* Error message styling */
@@ -825,6 +835,65 @@ class Styles {
         transform: translateX(0);
       }
     }
+/* ==================== BEAUTIFUL CODE BLOCK STYLING ==================== */
+
+.sai-code-block {
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.sai-code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(30, 41, 59, 0.9);
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.sai-code-language {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: #7dd3fc;
+}
+
+
+
+.sai-code-content {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  background: rgba(15, 23, 42, 0.95);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e2e8f0;
+  max-height: 300px;
+}
+
+.sai-code-content code {
+  background: none;
+  padding: 0;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  white-space: pre;
+}
+
+/* Syntax highlighting for common languages */
+.sai-code-content .keyword { color: #f472b6; } /* pink */
+.sai-code-content .string { color: #86efac; } /* green */
+.sai-code-content .comment { color: #94a3b8; font-style: italic; } /* gray */
+.sai-code-content .function { color: #7dd3fc; } /* light blue */
+.sai-code-content .number { color: #fdba74; } /* orange */
+.sai-code-content .class { color: #c084fc; } /* purple */
+.sai-code-content .operator { color: #fca5a5; } /* red */
 
     /* ==================== RESPONSIVE ADJUSTMENTS ==================== */
 

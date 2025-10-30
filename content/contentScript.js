@@ -30,8 +30,6 @@
       } else {
         ChatManager.restoreChatHistory();
       }
-
-      console.log("Watchwing AI extension initialized successfully");
     } catch (error) {
       console.error("Failed to initialize Watchwing AI:", error);
     }

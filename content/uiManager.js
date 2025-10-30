@@ -49,10 +49,7 @@ class UIManager {
         <div id="sai-body">
           <div id="sai-response" aria-live="polite"></div>
 
-          <div id="sai-loading" aria-hidden="true">
-            <div class="sai-spinner"></div>
-            <div class="sai-loading-text">Processing... please wait</div>
-          </div>
+          
         </div>
 
         <div id="sai-controls">
@@ -149,7 +146,7 @@ class UIManager {
   static setChatHeight(newHeight) {
     const chat = this.elements.chat;
     const minHeight = 320; // Minimum height in pixels
-    const maxHeight = window.innerHeight * 0.8; // 80% of viewport height
+    const maxHeight = window.innerHeight * 0.9; // 80% of viewport height
 
     // Constrain height within limits
     const constrainedHeight = Math.max(

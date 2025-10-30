@@ -1,5 +1,6 @@
 class ChatManager {
   static loadingInterval = null;
+  static loadingMessageDiv = null;
   static currentSpeech = {
     utterance: null,
     isPlaying: false,
@@ -241,7 +242,9 @@ class ChatManager {
     UIManager.elements.input.blur();
 
     UIManager.elements.responseEl.focus();
-    this.startProgressiveLoading();
+
+    // NEW: Start inline loading instead of overlay
+    this.startInlineLoading();
 
     try {
       await this.loadCurrentUrl();
@@ -288,12 +291,13 @@ class ChatManager {
 
       const json = await res.json();
       if (!res.ok) {
-        this.hideLoading();
+        this.hideInlineLoading();
         this.showError(json.error || res.statusText || "Unknown error");
         return;
       }
 
-      this.hideLoading();
+      // NEW: Hide inline loading
+      this.hideInlineLoading();
 
       const aiResponse = json.text || json.result || "No result from AI.";
 
@@ -322,7 +326,7 @@ class ChatManager {
       this.voiceInput.lastVoiceInput = false;
     } catch (err) {
       UIManager.showAfterCapture();
-      this.hideLoading();
+      this.hideInlineLoading();
       console.error(err);
       this.showError(err.message || String(err));
       this.voiceInput.lastVoiceInput = false;
@@ -466,7 +470,7 @@ class ChatManager {
     return messageDiv;
   }
 
-  // ENHANCED: Clean AI response with better line breaks
+  // ENHANCED: Clean AI response with better line breaks and code blocks
   static cleanAIResponse(text) {
     if (!text) return text;
 
@@ -477,12 +481,59 @@ class ChatManager {
       .replace(/\n\s*\n\s*\n+/g, "\n\n")
       .trim();
 
+    cleaned = this.formatCodeBlocks(cleaned);
     cleaned = this.formatBoldHeadings(cleaned);
     cleaned = this.formatBulletPoints(cleaned);
     cleaned = this.formatNumberedLists(cleaned);
     cleaned = this.formatParagraphs(cleaned);
 
     return cleaned;
+  }
+
+  // NEW: Format code blocks with language labels
+  static formatCodeBlocks(text) {
+    // Handle code blocks with language specification like ```python, ```javascript, etc.
+    return text.replace(
+      /```(\w+)?\s*\n([\s\S]*?)```/g,
+      (match, language, code) => {
+        const lang = language || "text";
+        return `
+          <div class="sai-code-block">
+            <div class="sai-code-header">
+              <span class="sai-code-language">${lang}</span>
+            </div>
+            <pre class="sai-code-content"><code>${this.escapeHtml(
+              code.trim()
+            )}</code></pre>
+          </div>
+        `;
+      }
+    );
+  }
+
+  // Helper method to escape HTML for code blocks
+  static escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // NEW: Copy code to clipboard
+  static copyCodeToClipboard(button) {
+    const codeBlock = button.closest(".sai-code-block");
+    const codeContent = codeBlock.querySelector(".sai-code-content");
+    const textToCopy = codeContent.textContent || codeContent.innerText;
+
+    if (this.copyToClipboard(textToCopy)) {
+      const originalText = button.textContent;
+      button.textContent = "Copied!";
+      button.classList.add("copied");
+
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.classList.remove("copied");
+      }, 2000);
+    }
   }
 
   static formatBoldHeadings(text) {
@@ -571,6 +622,7 @@ class ChatManager {
       if (!para) continue;
 
       if (
+        para.includes("sai-code-block") ||
         para.includes("sai-bullet-list") ||
         para.includes("sai-numbered-list") ||
         para.includes("sai-bold-heading")
@@ -925,24 +977,47 @@ class ChatManager {
     });
   }
 
-  static startProgressiveLoading() {
-    let step = 1;
-    this.showLoading(step);
-
-    this.loadingInterval = setInterval(() => {
-      step++;
-      if (step <= 5) {
-        this.showLoading(step);
-      }
-    }, 2000);
-  }
-
-  static showLoading(step = 1) {
-    const loadingEl = UIManager.elements.loadingEl;
+  // NEW: Inline loading with chat bubble
+  static startInlineLoading() {
     const responseEl = UIManager.elements.responseEl;
 
-    if (!loadingEl) return;
+    // Create loading message div
+    this.loadingMessageDiv = document.createElement("div");
+    this.loadingMessageDiv.className =
+      "sai-message sai-ai-message sai-loading-message";
 
+    const senderDiv = document.createElement("div");
+    senderDiv.className = "sai-sender sai-ai-sender";
+    senderDiv.textContent = "Watchwing";
+
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "sai-ai-content sai-loading-content";
+
+    const loadingContainer = document.createElement("div");
+    loadingContainer.className = "sai-inline-loading";
+
+    const spinner = document.createElement("div");
+    spinner.className = "sai-inline-spinner";
+
+    const loadingText = document.createElement("span");
+    loadingText.className = "sai-inline-loading-text";
+    loadingText.textContent = "Capturing screen...";
+
+    loadingContainer.appendChild(spinner);
+    loadingContainer.appendChild(loadingText);
+    contentDiv.appendChild(loadingContainer);
+
+    this.loadingMessageDiv.appendChild(senderDiv);
+    this.loadingMessageDiv.appendChild(contentDiv);
+
+    responseEl.appendChild(this.loadingMessageDiv);
+    this.loadingMessageDiv.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+
+    // Start progressive text updates
+    let step = 1;
     const loadingSteps = [
       "Capturing screen...",
       "Sending to AI for analysis...",
@@ -952,29 +1027,24 @@ class ChatManager {
       "Finalizing response...",
     ];
 
-    const loadingText = loadingSteps[step - 1] || "Processing... please wait";
-    loadingEl.querySelector(".sai-loading-text").textContent = loadingText;
-    loadingEl.setAttribute("aria-hidden", "false");
-    responseEl.style.opacity = "0.35";
-    responseEl.style.pointerEvents = "none";
+    this.loadingInterval = setInterval(() => {
+      step++;
+      if (step <= loadingSteps.length) {
+        loadingText.textContent = loadingSteps[step - 1];
+      }
+    }, 2000);
   }
 
-  static hideLoading() {
-    this.stopProgressiveLoading();
-
-    const loadingEl = UIManager.elements.loadingEl;
-    const responseEl = UIManager.elements.responseEl;
-
-    if (!loadingEl) return;
-    loadingEl.setAttribute("aria-hidden", "true");
-    responseEl.style.opacity = "1";
-    responseEl.style.pointerEvents = "auto";
-  }
-
-  static stopProgressiveLoading() {
+  // NEW: Hide inline loading
+  static hideInlineLoading() {
     if (this.loadingInterval) {
       clearInterval(this.loadingInterval);
       this.loadingInterval = null;
+    }
+
+    if (this.loadingMessageDiv && this.loadingMessageDiv.parentNode) {
+      this.loadingMessageDiv.remove();
+      this.loadingMessageDiv = null;
     }
   }
 

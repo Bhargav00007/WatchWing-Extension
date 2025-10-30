@@ -41,6 +41,9 @@ class ResponseFormatter {
     // Clean the text first
     text = this.cleanAiResponse(text);
 
+    // Convert markdown code blocks with language specification
+    text = this.formatCodeBlocks(text);
+
     // Convert markdown bold to HTML with blue styling
     text = text.replace(
       /\*\*(.*?)\*\*/g,
@@ -50,7 +53,7 @@ class ResponseFormatter {
     // Convert markdown italic to HTML
     text = text.replace(/\*(.*?)\*/g, "<em>$1</em>");
 
-    // Convert markdown code to HTML
+    // Convert markdown inline code to HTML
     text = text.replace(/`(.*?)`/g, '<code class="sai-inline-code">$1</code>');
 
     // Convert headings
@@ -71,6 +74,34 @@ class ResponseFormatter {
     text = this.formatParagraphs(text);
 
     return text;
+  }
+
+  // NEW: Format code blocks with language labels
+  static formatCodeBlocks(text) {
+    // Handle code blocks with language specification like ```python, ```javascript, etc.
+    return text.replace(
+      /```(\w+)?\s*\n([\s\S]*?)```/g,
+      (match, language, code) => {
+        const lang = language || "text";
+        return `
+          <div class="sai-code-block">
+            <div class="sai-code-header">
+              <span class="sai-code-language">${lang}</span>
+            </div>
+            <pre class="sai-code-content"><code>${this.escapeHtml(
+              code.trim()
+            )}</code></pre>
+          </div>
+        `;
+      }
+    );
+  }
+
+  // Helper method to escape HTML for code blocks
+  static escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   static formatBulletPoints(text) {
@@ -154,6 +185,7 @@ class ResponseFormatter {
 
       // Check if block is already formatted (contains HTML tags)
       if (
+        block.includes("sai-code-block") ||
         block.includes("sai-bullet-list") ||
         block.includes("sai-numbered-list") ||
         block.includes("<h2") ||
