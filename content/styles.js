@@ -74,16 +74,61 @@ class Styles {
       letter-spacing: 0.2px;
       color: #e8f3ff;
     }
-    #sai-close {
+    
+    /* Header buttons container */
+    #sai-header-buttons {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    
+    /* Header buttons styling */
+    .sai-header-btn {
       background: transparent;
       border: none;
       color: #9fb4d6;
-      font-size: 16px;
       cursor: pointer;
-      padding: 4px 6px;
-      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      padding: 0;
     }
-    #sai-close:hover { background: rgba(255,255,255,0.02); color: #ffffff; }
+    
+    .sai-header-btn:hover {
+      background: rgba(255,255,255,0.05);
+      color: #ffffff;
+    }
+    
+    .sai-header-btn:active {
+      background: rgba(255,255,255,0.08);
+      transform: scale(0.95);
+    }
+    
+    #sai-close {
+      font-size: 16px;
+      line-height: 1;
+    }
+    
+    #sai-clear svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Clear chat confirmation message */
+    .sai-clear-confirmation {
+      text-align: center;
+      padding: 12px;
+      color: #7dd3fc;
+      font-size: 14px;
+      font-style: italic;
+      opacity: 0.8;
+      cursor: default;
+      user-select: none;
+    }
 
     /* Body (response container) - FLEXIBLE */
     #sai-body {
@@ -941,6 +986,15 @@ class Styles {
       .sai-bullet-item,
       .sai-numbered-item {
         margin: 8px 0;
+      }
+      
+      #sai-header-buttons {
+        gap: 2px;
+      }
+      
+      .sai-header-btn {
+        width: 26px;
+        height: 26px;
       }
     }
 

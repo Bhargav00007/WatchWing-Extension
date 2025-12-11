@@ -17,6 +17,9 @@ class UIManager {
 
     // Initialize resize functionality
     this.initializeResize();
+
+    // Initialize clear button
+    this.initializeClearButton();
   }
 
   static cacheElements() {
@@ -28,6 +31,7 @@ class UIManager {
       send: document.getElementById("sai-send"),
       mic: document.getElementById("sai-mic"),
       closeBtn: document.getElementById("sai-close"),
+      clearBtn: document.getElementById("sai-clear"),
       responseEl: document.getElementById("sai-response"),
       loadingEl: document.getElementById("sai-loading"),
       headerEl: document.getElementById("sai-header"),
@@ -43,13 +47,18 @@ class UIManager {
       <div id="sai-chat" role="dialog" aria-label="Watchwing assistant" style="display:none;">
         <div id="sai-header">
           <div id="sai-title">Watchwing</div>
-          <button id="sai-close" aria-label="Close">✕</button>
+          <div id="sai-header-buttons">
+            <button id="sai-clear" class="sai-header-btn" title="Clear chat" aria-label="Clear chat">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+              </svg>
+            </button>
+            <button id="sai-close" class="sai-header-btn" aria-label="Close">✕</button>
+          </div>
         </div>
 
         <div id="sai-body">
           <div id="sai-response" aria-live="polite"></div>
-
-          
         </div>
 
         <div id="sai-controls">
@@ -96,6 +105,60 @@ class UIManager {
     // Prevent text selection during resize
     resizeHandle.addEventListener("selectstart", (e) => e.preventDefault());
     resizeHandle.addEventListener("dragstart", (e) => e.preventDefault());
+  }
+
+  static initializeClearButton() {
+    const clearBtn = this.elements.clearBtn;
+    if (!clearBtn) return;
+
+    clearBtn.addEventListener("click", () => {
+      this.clearChat();
+    });
+  }
+
+  static clearChat() {
+    const responseEl = this.elements.responseEl;
+    if (!responseEl) return;
+
+    // Clear the chat content
+    responseEl.innerHTML = "";
+
+    // Clear conversation history from session
+    if (typeof SessionManager !== "undefined") {
+      SessionManager.clearConversationHistory();
+    }
+
+    // Clear any conversation history in ChatManager if it exists
+    if (typeof ChatManager !== "undefined" && ChatManager.clearHistory) {
+      ChatManager.clearHistory();
+    }
+
+    // Show a brief confirmation message
+    this.showClearConfirmation();
+
+    // Focus back to input
+    if (this.elements.input) {
+      this.elements.input.focus();
+    }
+  }
+
+  static showClearConfirmation() {
+    const responseEl = this.elements.responseEl;
+    if (!responseEl) return;
+
+    // Create and show temporary confirmation message
+    const confirmation = document.createElement("div");
+    confirmation.className = "sai-clear-confirmation";
+    confirmation.textContent = "Chat cleared";
+
+    responseEl.appendChild(confirmation);
+
+    // Remove confirmation after 1.5 seconds
+    setTimeout(() => {
+      if (confirmation.parentNode === responseEl) {
+        responseEl.removeChild(confirmation);
+      }
+    }, 1500);
   }
 
   static startResize(e) {
@@ -157,7 +220,9 @@ class UIManager {
     chat.style.height = `${constrainedHeight}px`;
 
     // Update session data with new height
-    SessionManager.saveSessionData();
+    if (typeof SessionManager !== "undefined") {
+      SessionManager.saveSessionData();
+    }
   }
 
   static stopResize() {
@@ -182,7 +247,9 @@ class UIManager {
     this.isChatOpen = true;
 
     // Reset to default position and restore saved height
-    DragManager.setDefaultPosition();
+    if (typeof DragManager !== "undefined") {
+      DragManager.setDefaultPosition();
+    }
     this.restoreSavedHeight();
   }
 
@@ -190,18 +257,24 @@ class UIManager {
     this.elements.chat.style.display = "none";
     this.elements.btn.style.display = "inline-block";
     this.elements.input.value = "";
-    ChatManager.hideLoading();
+    if (typeof ChatManager !== "undefined") {
+      ChatManager.hideLoading();
+    }
     this.isChatOpen = false;
 
     // Save session data when closing
-    SessionManager.saveSessionData();
+    if (typeof SessionManager !== "undefined") {
+      SessionManager.saveSessionData();
+    }
   }
 
   static restoreSavedHeight() {
     // Restore saved height from session if available
-    const savedHeight = SessionManager.getSavedHeight();
-    if (savedHeight) {
-      this.setChatHeight(savedHeight);
+    if (typeof SessionManager !== "undefined") {
+      const savedHeight = SessionManager.getSavedHeight();
+      if (savedHeight) {
+        this.setChatHeight(savedHeight);
+      }
     }
   }
 
