@@ -6,8 +6,6 @@ class ChatManager {
     isPlaying: false,
     currentMessage: null,
     currentButton: null,
-    audioContext: null,
-    audioElement: null,
   };
 
   static voiceInput = {
@@ -240,10 +238,8 @@ class ChatManager {
     UIManager.elements.input.value = "";
     UIManager.autoSizeTextarea(UIManager.elements.input);
     UIManager.elements.input.blur();
-
     UIManager.elements.responseEl.focus();
 
-    // NEW: Start inline loading instead of overlay
     this.startInlineLoading();
 
     try {
@@ -296,7 +292,6 @@ class ChatManager {
         return;
       }
 
-      // NEW: Hide inline loading
       this.hideInlineLoading();
 
       const aiResponse = json.text || json.result || "No result from AI.";
@@ -333,13 +328,11 @@ class ChatManager {
     }
   }
 
-  // FIXED: Process clickable content - clean timestamps only
   static processClickableContent(text, currentUrl) {
     if (!text) return text;
 
     let processedText = text;
 
-    // Check if we're on YouTube
     const isYouTube =
       currentUrl &&
       (currentUrl.includes("youtube.com") || currentUrl.includes("youtu.be"));
@@ -352,22 +345,18 @@ class ChatManager {
       currentVideoId = videoIdMatch ? videoIdMatch[1] : null;
     }
 
-    // STEP 1: Remove any existing malformed YouTube URLs that appear before timestamps
     if (currentVideoId) {
       processedText = processedText.replace(
         /https:\/\/www\.youtube\.com\/watch\?v=[a-zA-Z0-9_-]+&t=\d+s["\s]*target="_blank">\[https:\/\/[^\]]+\]/g,
         ""
       );
-
       processedText = processedText.replace(
         /https:\/\/www\.youtube\.com\/watch\?v=[a-zA-Z0-9_-]+&t=\d+s["\s]*target="_blank">/g,
         ""
       );
     }
 
-    // STEP 2: Handle YouTube timestamps - Convert to clean clickable timestamps
     if (currentVideoId) {
-      // Handle timestamps in format [MM:SS] or (MM:SS)
       processedText = processedText.replace(
         /[\[\(](\d{1,2}):(\d{2})[\]\)]/g,
         (match, minutes, seconds) => {
@@ -378,7 +367,6 @@ class ChatManager {
         }
       );
 
-      // Handle standalone timestamps in format MM:SS (not already linked)
       processedText = processedText.replace(
         /(?<![\w\/=\-])(\d{1,2}):(\d{2})(?![\w\]])/g,
         (match, minutes, seconds) => {
@@ -389,7 +377,6 @@ class ChatManager {
         }
       );
 
-      // Handle seconds-only timestamps like "570s"
       processedText = processedText.replace(
         /(?<![\w\/=\-])(\d+)s(?![\w\]])/g,
         (match, seconds) => {
@@ -405,7 +392,6 @@ class ChatManager {
       );
     }
 
-    // STEP 3: Make regular URLs clickable (but avoid already processed content)
     processedText = processedText.replace(
       /(?<!href=["'])(?<!href=)(https?:\/\/(?!www\.youtube\.com\/watch)[^\s<"']+)(?!["'])/g,
       (match) => {
@@ -413,7 +399,6 @@ class ChatManager {
       }
     );
 
-    // STEP 4: Make email addresses clickable
     processedText = processedText.replace(
       /(?<![\w@])([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})(?![\w])/g,
       '<a href="mailto:$1" class="sai-email-link">$1</a>'
@@ -422,7 +407,6 @@ class ChatManager {
     return processedText;
   }
 
-  // UPDATED: Append message with beautiful formatting
   static appendMessage(sender, content, isFormatted = false) {
     const responseEl = UIManager.elements.responseEl;
 
@@ -470,7 +454,6 @@ class ChatManager {
     return messageDiv;
   }
 
-  // ENHANCED: Clean AI response with better line breaks and code blocks
   static cleanAIResponse(text) {
     if (!text) return text;
 
@@ -490,50 +473,29 @@ class ChatManager {
     return cleaned;
   }
 
-  // NEW: Format code blocks with language labels
   static formatCodeBlocks(text) {
-    // Handle code blocks with language specification like ```python, ```javascript, etc.
     return text.replace(
       /```(\w+)?\s*\n([\s\S]*?)```/g,
       (match, language, code) => {
         const lang = language || "text";
         return `
-          <div class="sai-code-block">
-            <div class="sai-code-header">
-              <span class="sai-code-language">${lang}</span>
-            </div>
-            <pre class="sai-code-content"><code>${this.escapeHtml(
-              code.trim()
-            )}</code></pre>
+        <div class="sai-code-block">
+          <div class="sai-code-header">
+            <span class="sai-code-language">${lang}</span>
           </div>
-        `;
+          <pre class="sai-code-content"><code>${this.escapeHtml(
+            code.trim()
+          )}</code></pre>
+        </div>
+      `;
       }
     );
   }
 
-  // Helper method to escape HTML for code blocks
   static escapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
-  }
-
-  // NEW: Copy code to clipboard
-  static copyCodeToClipboard(button) {
-    const codeBlock = button.closest(".sai-code-block");
-    const codeContent = codeBlock.querySelector(".sai-code-content");
-    const textToCopy = codeContent.textContent || codeContent.innerText;
-
-    if (this.copyToClipboard(textToCopy)) {
-      const originalText = button.textContent;
-      button.textContent = "Copied!";
-      button.classList.add("copied");
-
-      setTimeout(() => {
-        button.textContent = originalText;
-        button.classList.remove("copied");
-      }, 2000);
-    }
   }
 
   static formatBoldHeadings(text) {
@@ -977,11 +939,9 @@ class ChatManager {
     });
   }
 
-  // NEW: Inline loading with chat bubble
   static startInlineLoading() {
     const responseEl = UIManager.elements.responseEl;
 
-    // Create loading message div
     this.loadingMessageDiv = document.createElement("div");
     this.loadingMessageDiv.className =
       "sai-message sai-ai-message sai-loading-message";
@@ -1016,7 +976,6 @@ class ChatManager {
       block: "start",
     });
 
-    // Start progressive text updates
     let step = 1;
     const loadingSteps = [
       "Capturing screen...",
@@ -1035,7 +994,6 @@ class ChatManager {
     }, 2000);
   }
 
-  // NEW: Hide inline loading
   static hideInlineLoading() {
     if (this.loadingInterval) {
       clearInterval(this.loadingInterval);

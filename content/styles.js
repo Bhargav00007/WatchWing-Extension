@@ -1,7 +1,6 @@
 class Styles {
   static getStyles() {
     return `
-    /* Panel container */
     #sai-panel {
       position: fixed;
       bottom: 52px;
@@ -12,7 +11,6 @@ class Styles {
       -moz-osx-font-smoothing:grayscale;
     }
 
-    /* Ask AI button (dark, no shadow) */
     #sai-btn {
       background: linear-gradient(180deg, #0f172a, #0b1220);
       color: #e6f0ff;
@@ -28,7 +26,6 @@ class Styles {
     }
     #sai-btn:hover { background: linear-gradient(180deg, #111c3a, #0d162e); opacity: 0.85; }
 
-    /* Chat panel (dark, no shadow, tighter padding) - RESIZABLE */
     #sai-chat {
       display:flex;
       flex-direction: column;
@@ -54,7 +51,6 @@ class Styles {
       max-width: 90vw;
     }
 
-    /* Header */
     #sai-header {
       display:flex;
       align-items:center;
@@ -75,14 +71,12 @@ class Styles {
       color: #e8f3ff;
     }
     
-    /* Header buttons container */
     #sai-header-buttons {
       display: flex;
       gap: 4px;
       align-items: center;
     }
     
-    /* Header buttons styling */
     .sai-header-btn {
       background: transparent;
       border: none;
@@ -118,7 +112,6 @@ class Styles {
       height: 16px;
     }
 
-    /* Clear chat confirmation message */
     .sai-clear-confirmation {
       text-align: center;
       padding: 12px;
@@ -130,7 +123,6 @@ class Styles {
       user-select: none;
     }
 
-    /* Body (response container) - FLEXIBLE */
     #sai-body {
       position: relative;
       flex: 1 1 auto;
@@ -143,7 +135,6 @@ class Styles {
       min-height: 120px;
     }
 
-    /* Response area - SCROLLABLE AND FLEXIBLE */
     #sai-response {
       width: 100%;
       height: 100%;
@@ -160,7 +151,6 @@ class Styles {
       min-height: 0;
     }
 
-    /* Welcome message */
     .sai-welcome-message {
       text-align: center;
       color: #7dd3fc;
@@ -176,13 +166,11 @@ class Styles {
       justify-content: center;
     }
 
-    /* Chat separators */
     .sai-separator {
       border-top: 1px solid rgba(255,255,255,0.08);
       margin: 8px 0;
     }
 
-    /* NEW: Inline Loading Message */
     .sai-loading-message {
       animation: sai-message-appear 0.3s ease-out;
     }
@@ -223,7 +211,6 @@ class Styles {
       line-height: 1.5;
     }
 
-    /* Controls: input + send */
     #sai-controls {
       display:flex;
       gap: 0;
@@ -236,7 +223,6 @@ class Styles {
       flex-shrink: 0;
     }
 
-    /* Input with buttons inside */
     #sai-input {
       flex: 1 1 auto;
       min-height: 40px;
@@ -257,7 +243,6 @@ class Styles {
     }
     #sai-input::placeholder { color: rgba(230,240,255,0.45); }
 
-    /* Send button - INSIDE INPUT */
     #sai-send {
       position: absolute;
       right: 8px;
@@ -286,7 +271,6 @@ class Styles {
     }
     #sai-send:active { transform: translateY(-50%) scale(0.95); }
 
-    /* Microphone button - INSIDE INPUT */
     #sai-mic {
       position: absolute;
       right: 46px;
@@ -336,7 +320,6 @@ class Styles {
       }
     }
 
-    /* Voice recording indicator */
     .sai-recording-indicator {
       position: absolute;
       top: -4px;
@@ -363,7 +346,6 @@ class Styles {
       }
     }
 
-    /* Resize handle */
     .sai-resize-handle {
       position: absolute;
       bottom: 2px;
@@ -396,7 +378,6 @@ class Styles {
       opacity: 1 !important;
     }
 
-    /* Scrollbar tweaks for dark mode */
     #sai-response::-webkit-scrollbar, #sai-input::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -415,8 +396,6 @@ class Styles {
     #sai-response::-webkit-scrollbar-thumb:hover {
       background: rgba(255,255,255,0.1);
     }
-
-    /* ==================== CHAT MESSAGE STYLES ==================== */
 
     .sai-message {
       margin-bottom: 20px;
@@ -502,9 +481,6 @@ class Styles {
       text-align: left;
     }
 
-    /* ==================== ENHANCED CONTENT FORMATTING ==================== */
-
-    /* Paragraphs with better spacing */
     .sai-paragraph {
       margin: 0 0 16px 0;
       line-height: 1.7;
@@ -515,7 +491,6 @@ class Styles {
       margin-bottom: 0;
     }
 
-    /* Bold headings in vibrant blue - INLINE LAYOUT */
     .sai-bold-heading {
       color: #60a5fa;
       font-weight: 700;
@@ -525,14 +500,10 @@ class Styles {
       font-size: 14px;
     }
 
-    /* Section container */
     .sai-section {
       margin: 16px 0;
     }
 
-    /* ==================== BEAUTIFUL LIST STYLING - INLINE LAYOUT ==================== */
-
-    /* Bullet list styling - INLINE HORIZONTAL LAYOUT */
     .sai-bullet-list {
       margin: 14px 0;
       padding: 0;
@@ -561,7 +532,6 @@ class Styles {
       line-height: 1.7;
     }
 
-    /* Numbered list styling - INLINE HORIZONTAL LAYOUT */
     .sai-numbered-list {
       margin: 14px 0;
       padding: 0;
@@ -591,9 +561,6 @@ class Styles {
       line-height: 1.7;
     }
 
-    /* ==================== CLICKABLE LINKS STYLING ==================== */
-
-    /* YouTube timestamp links - Vibrant and clear */
     .sai-timestamp-link {
       color: #60a5fa !important;
       text-decoration: none;
@@ -620,7 +587,6 @@ class Styles {
       transform: translateY(0);
     }
 
-    /* Regular URL links */
     .sai-url-link {
       color: #7dd3fc !important;
       text-decoration: underline;
@@ -640,7 +606,6 @@ class Styles {
       border-radius: 3px;
     }
 
-    /* Email links */
     .sai-email-link {
       color: #7dd3fc !important;
       text-decoration: underline;
@@ -655,8 +620,6 @@ class Styles {
       padding: 0 3px;
       border-radius: 3px;
     }
-
-    /* ==================== TEXT FORMATTING ==================== */
 
     .sai-ai-content b, .sai-ai-content strong {
       font-weight: 700;
@@ -736,14 +699,6 @@ class Styles {
       border-radius: 6px;
     }
 
-    /* Better line breaks */
-    .sai-ai-content br {
-      content: "";
-      display: block;
-      margin: 6px 0;
-    }
-
-    /* Selection styles */
     .sai-ai-content ::selection,
     .sai-user-bubble ::selection,
     #sai-response ::selection {
@@ -758,9 +713,6 @@ class Styles {
       color: #ffffff;
     }
 
-    /* ==================== COPY & VOICE BUTTONS ==================== */
-
-    /* Copy button */
     .sai-copy-button {
       position: absolute;
       top: 12px;
@@ -794,7 +746,6 @@ class Styles {
       background: rgba(74, 222, 128, 0.15);
     }
 
-    /* Voice button */
     .sai-voice-button {
       position: absolute;
       top: 12px;
@@ -841,7 +792,6 @@ class Styles {
       opacity: 1;
     }
 
-    /* Voice loading indicator */
     .sai-voice-loading {
       display: inline-block;
       width: 14px;
@@ -857,7 +807,6 @@ class Styles {
       100% { transform: rotate(360deg); }
     }
 
-    /* Error message styling */
     .sai-error-message {
       background: rgba(239, 68, 68, 0.12);
       border: 1px solid rgba(239, 68, 68, 0.35);
@@ -880,67 +829,53 @@ class Styles {
         transform: translateX(0);
       }
     }
-/* ==================== BEAUTIFUL CODE BLOCK STYLING ==================== */
 
-.sai-code-block {
-  margin: 16px 0;
-  border-radius: 8px;
-  overflow: hidden;
-  background: rgba(15, 23, 42, 0.8);
-}
+    .sai-code-block {
+      margin: 16px 0;
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(15, 23, 42, 0.8);
+    }
 
-.sai-code-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: rgba(30, 41, 59, 0.9);
-  font-size: 12px;
-  font-weight: 600;
-  color: #94a3b8;
-}
+    .sai-code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: rgba(30, 41, 59, 0.9);
+      font-size: 12px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
 
-.sai-code-language {
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 700;
-  color: #7dd3fc;
-}
+    .sai-code-language {
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+      color: #7dd3fc;
+    }
 
+    .sai-code-content {
+      margin: 0;
+      padding: 12px;
+      overflow-x: auto;
+      background: rgba(15, 23, 42, 0.95);
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #e2e8f0;
+      max-height: 300px;
+    }
 
-
-.sai-code-content {
-  margin: 0;
-  padding: 12px;
-  overflow-x: auto;
-  background: rgba(15, 23, 42, 0.95);
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #e2e8f0;
-  max-height: 300px;
-}
-
-.sai-code-content code {
-  background: none;
-  padding: 0;
-  border: none;
-  color: inherit;
-  font-family: inherit;
-  font-size: inherit;
-  white-space: pre;
-}
-
-/* Syntax highlighting for common languages */
-.sai-code-content .keyword { color: #f472b6; } /* pink */
-.sai-code-content .string { color: #86efac; } /* green */
-.sai-code-content .comment { color: #94a3b8; font-style: italic; } /* gray */
-.sai-code-content .function { color: #7dd3fc; } /* light blue */
-.sai-code-content .number { color: #fdba74; } /* orange */
-.sai-code-content .class { color: #c084fc; } /* purple */
-.sai-code-content .operator { color: #fca5a5; } /* red */
-
-    /* ==================== RESPONSIVE ADJUSTMENTS ==================== */
+    .sai-code-content code {
+      background: none;
+      padding: 0;
+      border: none;
+      color: inherit;
+      font-family: inherit;
+      font-size: inherit;
+      white-space: pre;
+    }
 
     @media (max-width: 400px) {
       #sai-chat {
@@ -998,7 +933,6 @@ class Styles {
       }
     }
 
-    /* Small screen height adjustments */
     @media (max-height: 600px) {
       #sai-chat {
         min-height: 280px;
@@ -1006,30 +940,12 @@ class Styles {
       }
     }
 
-    /* High contrast mode */
-    @media (prefers-contrast: high) {
-      .sai-timestamp-link {
-        text-decoration-thickness: 2px;
-        border-width: 2px;
-      }
-      
-      .sai-url-link {
-        text-decoration-thickness: 2px;
-      }
-      
-      .sai-bold-heading {
-        font-weight: 800;
-      }
-    }
-
-    /* Print styles */
-    @media print {
+    @media (print) {
       #sai-panel, #sai-btn {
         display: none !important;
       }
     }
 
-    /* Reduced motion */
     @media (prefers-reduced-motion: reduce) {
       * {
         animation-duration: 0.01ms !important;

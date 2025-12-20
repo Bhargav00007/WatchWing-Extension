@@ -6,19 +6,13 @@ class UIManager {
   static startY = 0;
 
   static createUI() {
-    // Create main container
     const wrapper = document.createElement("div");
     wrapper.id = "sai-root";
     wrapper.innerHTML = this.getUITemplate();
     document.body.appendChild(wrapper);
 
-    // Cache element references
     this.cacheElements();
-
-    // Initialize resize functionality
     this.initializeResize();
-
-    // Initialize clear button
     this.initializeClearButton();
   }
 
@@ -33,7 +27,6 @@ class UIManager {
       closeBtn: document.getElementById("sai-close"),
       clearBtn: document.getElementById("sai-clear"),
       responseEl: document.getElementById("sai-response"),
-      loadingEl: document.getElementById("sai-loading"),
       headerEl: document.getElementById("sai-header"),
       resizeHandle: document.getElementById("sai-resize-handle"),
     };
@@ -41,24 +34,24 @@ class UIManager {
 
   static getUITemplate() {
     return `
-    <div id="sai-panel" class="sai-closed" aria-live="polite" aria-atomic="true">
+    <div id="sai-panel" class="sai-closed">
       <button id="sai-btn" title="Ask AI">Ask AI</button>
 
-      <div id="sai-chat" role="dialog" aria-label="Watchwing assistant" style="display:none;">
+      <div id="sai-chat" style="display:none;">
         <div id="sai-header">
           <div id="sai-title">Watchwing</div>
           <div id="sai-header-buttons">
-            <button id="sai-clear" class="sai-header-btn" title="Clear chat" aria-label="Clear chat">
+            <button id="sai-clear" class="sai-header-btn" title="Clear chat">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
               </svg>
             </button>
-            <button id="sai-close" class="sai-header-btn" aria-label="Close">✕</button>
+            <button id="sai-close" class="sai-header-btn">✕</button>
           </div>
         </div>
 
         <div id="sai-body">
-          <div id="sai-response" aria-live="polite"></div>
+          <div id="sai-response"></div>
         </div>
 
         <div id="sai-controls">
@@ -75,7 +68,6 @@ class UIManager {
           </button>
         </div>
         
-        <!-- Resize Handle -->
         <div id="sai-resize-handle" class="sai-resize-handle" title="Resize window"></div>
       </div>
     </div>`;
@@ -93,16 +85,11 @@ class UIManager {
 
     if (!resizeHandle || !chat) return;
 
-    // Mouse events for resize
     resizeHandle.addEventListener("mousedown", this.startResize.bind(this));
-
-    // Touch events for mobile resize
     resizeHandle.addEventListener(
       "touchstart",
       this.startResizeTouch.bind(this)
     );
-
-    // Prevent text selection during resize
     resizeHandle.addEventListener("selectstart", (e) => e.preventDefault());
     resizeHandle.addEventListener("dragstart", (e) => e.preventDefault());
   }
@@ -120,23 +107,18 @@ class UIManager {
     const responseEl = this.elements.responseEl;
     if (!responseEl) return;
 
-    // Clear the chat content
     responseEl.innerHTML = "";
 
-    // Clear conversation history from session
     if (typeof SessionManager !== "undefined") {
       SessionManager.clearConversationHistory();
     }
 
-    // Clear any conversation history in ChatManager if it exists
     if (typeof ChatManager !== "undefined" && ChatManager.clearHistory) {
       ChatManager.clearHistory();
     }
 
-    // Show a brief confirmation message
     this.showClearConfirmation();
 
-    // Focus back to input
     if (this.elements.input) {
       this.elements.input.focus();
     }
@@ -146,14 +128,12 @@ class UIManager {
     const responseEl = this.elements.responseEl;
     if (!responseEl) return;
 
-    // Create and show temporary confirmation message
     const confirmation = document.createElement("div");
     confirmation.className = "sai-clear-confirmation";
     confirmation.textContent = "Chat cleared";
 
     responseEl.appendChild(confirmation);
 
-    // Remove confirmation after 1.5 seconds
     setTimeout(() => {
       if (confirmation.parentNode === responseEl) {
         responseEl.removeChild(confirmation);
@@ -208,10 +188,9 @@ class UIManager {
 
   static setChatHeight(newHeight) {
     const chat = this.elements.chat;
-    const minHeight = 320; // Minimum height in pixels
-    const maxHeight = window.innerHeight * 0.9; // 80% of viewport height
+    const minHeight = 320;
+    const maxHeight = window.innerHeight * 0.9;
 
-    // Constrain height within limits
     const constrainedHeight = Math.max(
       minHeight,
       Math.min(newHeight, maxHeight)
@@ -219,7 +198,6 @@ class UIManager {
 
     chat.style.height = `${constrainedHeight}px`;
 
-    // Update session data with new height
     if (typeof SessionManager !== "undefined") {
       SessionManager.saveSessionData();
     }
@@ -246,7 +224,6 @@ class UIManager {
     this.elements.input.focus();
     this.isChatOpen = true;
 
-    // Reset to default position and restore saved height
     if (typeof DragManager !== "undefined") {
       DragManager.setDefaultPosition();
     }
@@ -262,14 +239,12 @@ class UIManager {
     }
     this.isChatOpen = false;
 
-    // Save session data when closing
     if (typeof SessionManager !== "undefined") {
       SessionManager.saveSessionData();
     }
   }
 
   static restoreSavedHeight() {
-    // Restore saved height from session if available
     if (typeof SessionManager !== "undefined") {
       const savedHeight = SessionManager.getSavedHeight();
       if (savedHeight) {

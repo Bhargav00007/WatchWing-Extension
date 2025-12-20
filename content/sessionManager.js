@@ -4,8 +4,6 @@ class SessionManager {
 
   static initialize() {
     this.loadSessionData();
-
-    // Set up beforeunload to clear session storage when tab closes
     window.addEventListener("beforeunload", () => {
       sessionStorage.removeItem(this.STORAGE_KEY);
     });
@@ -21,7 +19,6 @@ class SessionManager {
         const position = sessionData.position || { x: 0, y: 0 };
         DragManager.setPosition(position);
 
-        // Apply saved position if it exists and is not default
         if (position.x !== 0 || position.y !== 0) {
           const chat = UIManager.elements.chat;
           chat.style.left = position.x + "px";
@@ -30,7 +27,6 @@ class SessionManager {
           chat.style.right = "auto";
         }
 
-        // Apply saved height if available
         if (sessionData.chatHeight) {
           setTimeout(() => {
             UIManager.setChatHeight(sessionData.chatHeight);

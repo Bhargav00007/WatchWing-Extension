@@ -11,14 +11,12 @@ class DragManager {
     document.addEventListener("mousemove", (e) => this.onDrag(e));
     document.addEventListener("mouseup", () => this.stopDrag());
 
-    // Touch events for mobile
     headerEl.addEventListener("touchstart", (e) => this.startDragTouch(e));
     document.addEventListener("touchmove", (e) => this.onDragTouch(e));
     document.addEventListener("touchend", () => this.stopDrag());
   }
 
   static startDrag(e) {
-    // Don't start drag if resizing
     if (UIManager.isResizing) return;
 
     this.isDragging = true;
@@ -65,20 +63,18 @@ class DragManager {
   static stopDrag() {
     this.isDragging = false;
     UIManager.elements.headerEl.style.cursor = "grab";
-    SessionManager.saveSessionData(); // Save position when dragging stops
+    SessionManager.saveSessionData();
   }
 
   static setChatPosition(x, y) {
     const chat = UIManager.elements.chat;
 
-    // Constrain to viewport
     const maxX = window.innerWidth - chat.offsetWidth;
     const maxY = window.innerHeight - chat.offsetHeight;
 
     this.currentPosition.x = Math.max(0, Math.min(x, maxX));
     this.currentPosition.y = Math.max(0, Math.min(y, maxY));
 
-    // Use absolute positioning instead of bottom/right
     chat.style.left = this.currentPosition.x + "px";
     chat.style.top = this.currentPosition.y + "px";
     chat.style.bottom = "auto";
@@ -87,7 +83,6 @@ class DragManager {
 
   static setDefaultPosition() {
     const chat = UIManager.elements.chat;
-    // Reset to default bottom right position
     chat.style.bottom = "52px";
     chat.style.right = "22px";
     chat.style.left = "auto";
