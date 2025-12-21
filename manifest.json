@@ -14,7 +14,6 @@
       "js": [
         "content/sessionManager.js",
         "content/styles.js",
-        "content/responseFormatter.js",
         "content/dragManager.js",
         "content/chatManager.js",
         "content/uiManager.js",

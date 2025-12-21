@@ -1,5 +1,5 @@
 (() => {
-  const BACKEND_URL = "https://watchwing.vercel.app";
+  const BACKEND_URL = "https://watchwing.vercel.app/";
 
   if (window.__screenAiInjected) return;
   window.__screenAiInjected = true;
