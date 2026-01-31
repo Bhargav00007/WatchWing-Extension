@@ -1,5 +1,5 @@
 (() => {
-  const BACKEND_URL = "https://watchwing.vercel.app/";
+  const BACKEND_URL = "https://watchwing.vercel.app";
 
   if (window.__screenAiInjected) return;
   window.__screenAiInjected = true;
@@ -61,7 +61,7 @@
     document.addEventListener("click", (e) => {
       if (
         e.target.matches(
-          ".sai-clickable-link, .sai-clickable-timestamp, .sai-clickable-email"
+          ".sai-clickable-link, .sai-clickable-timestamp, .sai-clickable-email",
         )
       ) {
         e.preventDefault();
@@ -81,7 +81,7 @@
       const responseEl = document.getElementById("sai-response");
       if (responseEl) {
         const lastAiMessage = responseEl.querySelector(
-          ".sai-ai-message:last-child"
+          ".sai-ai-message:last-child",
         );
         if (lastAiMessage) {
           const voiceButton = lastAiMessage.querySelector(".sai-voice-button");
