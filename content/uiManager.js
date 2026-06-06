@@ -4,6 +4,7 @@ class UIManager {
   static isResizing = false;
   static startHeight = 0;
   static startY = 0;
+  static isAskButtonHidden = false; // track toggle state
 
   static createUI() {
     const wrapper = document.createElement("div");
@@ -14,6 +15,8 @@ class UIManager {
     this.cacheElements();
     this.initializeResize();
     this.initializeClearButton();
+    this.initToggleButton();
+    this.loadToggleState(); // cross‑origin restore
   }
 
   static cacheElements() {
@@ -29,13 +32,19 @@ class UIManager {
       responseEl: document.getElementById("sai-response"),
       headerEl: document.getElementById("sai-header"),
       resizeHandle: document.getElementById("sai-resize-handle"),
+      toggleBtn: document.getElementById("sai-toggle-btn"),
     };
   }
 
   static getUITemplate() {
     return `
     <div id="sai-panel" class="sai-closed">
-      <button id="sai-btn" title="Ask AI">Ask AI</button>
+      <button id="sai-btn">Ask AI</button>
+      <button id="sai-toggle-btn" class="sai-toggle-btn" >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
 
       <div id="sai-chat" style="display:none;">
         <div id="sai-header">
@@ -79,16 +88,128 @@ class UIManager {
     document.head.appendChild(style);
   }
 
+  // ---------- TOGGLE with cross‑origin storage ----------
+  static initToggleButton() {
+    const toggleBtn = this.elements.toggleBtn;
+    const askBtn = this.elements.btn;
+    if (!toggleBtn || !askBtn) return;
+
+    toggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggleAskButtonVisibility();
+    });
+  }
+
+  static toggleAskButtonVisibility() {
+    const askBtn = this.elements.btn;
+    if (!askBtn) return;
+
+    if (this.isAskButtonHidden) {
+      askBtn.classList.remove("sai-btn-hidden");
+      this.isAskButtonHidden = false;
+      this.updateToggleButtonUI(false);
+    } else {
+      askBtn.classList.add("sai-btn-hidden");
+      this.isAskButtonHidden = true;
+      this.updateToggleButtonUI(true);
+    }
+    this.saveToggleState();
+  }
+
+  static updateToggleButtonUI(isHidden) {
+    const toggleBtn = this.elements.toggleBtn;
+    if (!toggleBtn) return;
+    if (isHidden) {
+      toggleBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      `;
+      toggleBtn.title = "Show Ask AI";
+    } else {
+      toggleBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      `;
+      toggleBtn.title = "Hide Ask AI";
+    }
+  }
+
+  // ----- Cross‑origin storage (chrome.storage) with fallback -----
+  static isExtensionContext() {
+    return (
+      typeof chrome !== "undefined" && chrome.storage && chrome.storage.local
+    );
+  }
+
+  static saveToggleState() {
+    const value = this.isAskButtonHidden;
+    if (this.isExtensionContext()) {
+      chrome.storage.local.set({ sai_askButtonHidden: value }, () => {
+        if (chrome.runtime.lastError) console.warn(chrome.runtime.lastError);
+      });
+    } else {
+      try {
+        localStorage.setItem("sai_askButtonHidden", value);
+      } catch (e) {}
+    }
+  }
+
+  static loadToggleState() {
+    const applyState = (hidden) => {
+      if (hidden === undefined) return;
+      const askBtn = this.elements.btn;
+      if (!askBtn) return;
+      if (hidden === true) {
+        if (!askBtn.classList.contains("sai-btn-hidden")) {
+          askBtn.classList.add("sai-btn-hidden");
+          this.isAskButtonHidden = true;
+          this.updateToggleButtonUI(true);
+        }
+      } else {
+        if (askBtn.classList.contains("sai-btn-hidden")) {
+          askBtn.classList.remove("sai-btn-hidden");
+          this.isAskButtonHidden = false;
+          this.updateToggleButtonUI(false);
+        }
+      }
+    };
+
+    if (this.isExtensionContext()) {
+      chrome.storage.local.get("sai_askButtonHidden", (result) => {
+        if (chrome.runtime.lastError) {
+          console.warn(chrome.runtime.lastError);
+          this.fallbackLoadState(applyState);
+        } else {
+          applyState(result.sai_askButtonHidden);
+        }
+      });
+    } else {
+      this.fallbackLoadState(applyState);
+    }
+  }
+
+  static fallbackLoadState(callback) {
+    try {
+      const saved = localStorage.getItem("sai_askButtonHidden");
+      if (saved === "true") callback(true);
+      else if (saved === "false") callback(false);
+      else callback(undefined);
+    } catch (e) {
+      callback(undefined);
+    }
+  }
+
+  // ---------- Original methods (unchanged) ----------
   static initializeResize() {
     const resizeHandle = this.elements.resizeHandle;
     const chat = this.elements.chat;
-
     if (!resizeHandle || !chat) return;
-
     resizeHandle.addEventListener("mousedown", this.startResize.bind(this));
     resizeHandle.addEventListener(
       "touchstart",
-      this.startResizeTouch.bind(this)
+      this.startResizeTouch.bind(this),
     );
     resizeHandle.addEventListener("selectstart", (e) => e.preventDefault());
     resizeHandle.addEventListener("dragstart", (e) => e.preventDefault());
@@ -97,47 +218,31 @@ class UIManager {
   static initializeClearButton() {
     const clearBtn = this.elements.clearBtn;
     if (!clearBtn) return;
-
-    clearBtn.addEventListener("click", () => {
-      this.clearChat();
-    });
+    clearBtn.addEventListener("click", () => this.clearChat());
   }
 
   static clearChat() {
     const responseEl = this.elements.responseEl;
     if (!responseEl) return;
-
     responseEl.innerHTML = "";
-
-    if (typeof SessionManager !== "undefined") {
+    if (typeof SessionManager !== "undefined")
       SessionManager.clearConversationHistory();
-    }
-
-    if (typeof ChatManager !== "undefined" && ChatManager.clearHistory) {
+    if (typeof ChatManager !== "undefined" && ChatManager.clearHistory)
       ChatManager.clearHistory();
-    }
-
     this.showClearConfirmation();
-
-    if (this.elements.input) {
-      this.elements.input.focus();
-    }
+    if (this.elements.input) this.elements.input.focus();
   }
 
   static showClearConfirmation() {
     const responseEl = this.elements.responseEl;
     if (!responseEl) return;
-
     const confirmation = document.createElement("div");
     confirmation.className = "sai-clear-confirmation";
     confirmation.textContent = "Chat cleared";
-
     responseEl.appendChild(confirmation);
-
     setTimeout(() => {
-      if (confirmation.parentNode === responseEl) {
+      if (confirmation.parentNode === responseEl)
         responseEl.removeChild(confirmation);
-      }
     }, 1500);
   }
 
@@ -146,10 +251,8 @@ class UIManager {
     this.isResizing = true;
     this.startHeight = this.elements.chat.offsetHeight;
     this.startY = e.clientY;
-
     document.addEventListener("mousemove", this.handleResize.bind(this));
     document.addEventListener("mouseup", this.stopResize.bind(this));
-
     this.elements.chat.style.userSelect = "none";
     document.body.style.cursor = "nwse-resize";
   }
@@ -157,63 +260,47 @@ class UIManager {
   static startResizeTouch(e) {
     e.preventDefault();
     if (e.touches.length !== 1) return;
-
     this.isResizing = true;
     this.startHeight = this.elements.chat.offsetHeight;
     this.startY = e.touches[0].clientY;
-
     document.addEventListener("touchmove", this.handleResizeTouch.bind(this));
     document.addEventListener("touchend", this.stopResize.bind(this));
-
     this.elements.chat.style.userSelect = "none";
   }
 
   static handleResize(e) {
     if (!this.isResizing) return;
-
     const deltaY = this.startY - e.clientY;
-    const newHeight = this.startHeight + deltaY;
-
-    this.setChatHeight(newHeight);
+    this.setChatHeight(this.startHeight + deltaY);
   }
 
   static handleResizeTouch(e) {
     if (!this.isResizing || e.touches.length !== 1) return;
-
     const deltaY = this.startY - e.touches[0].clientY;
-    const newHeight = this.startHeight + deltaY;
-
-    this.setChatHeight(newHeight);
+    this.setChatHeight(this.startHeight + deltaY);
   }
 
   static setChatHeight(newHeight) {
     const chat = this.elements.chat;
     const minHeight = 320;
     const maxHeight = window.innerHeight * 0.9;
-
     const constrainedHeight = Math.max(
       minHeight,
-      Math.min(newHeight, maxHeight)
+      Math.min(newHeight, maxHeight),
     );
-
     chat.style.height = `${constrainedHeight}px`;
-
-    if (typeof SessionManager !== "undefined") {
-      SessionManager.saveSessionData();
-    }
+    if (typeof SessionManager !== "undefined") SessionManager.saveSessionData();
   }
 
   static stopResize() {
     this.isResizing = false;
-
     document.removeEventListener("mousemove", this.handleResize.bind(this));
     document.removeEventListener("mouseup", this.stopResize.bind(this));
     document.removeEventListener(
       "touchmove",
-      this.handleResizeTouch.bind(this)
+      this.handleResizeTouch.bind(this),
     );
     document.removeEventListener("touchend", this.stopResize.bind(this));
-
     this.elements.chat.style.userSelect = "";
     document.body.style.cursor = "";
   }
@@ -223,10 +310,8 @@ class UIManager {
     this.elements.chat.style.display = "flex";
     this.elements.input.focus();
     this.isChatOpen = true;
-
-    if (typeof DragManager !== "undefined") {
-      DragManager.setDefaultPosition();
-    }
+    if (this.elements.toggleBtn) this.elements.toggleBtn.style.display = "none";
+    if (typeof DragManager !== "undefined") DragManager.setDefaultPosition();
     this.restoreSavedHeight();
   }
 
@@ -234,22 +319,16 @@ class UIManager {
     this.elements.chat.style.display = "none";
     this.elements.btn.style.display = "inline-block";
     this.elements.input.value = "";
-    if (typeof ChatManager !== "undefined") {
-      ChatManager.hideLoading();
-    }
+    if (typeof ChatManager !== "undefined") ChatManager.hideLoading();
     this.isChatOpen = false;
-
-    if (typeof SessionManager !== "undefined") {
-      SessionManager.saveSessionData();
-    }
+    if (this.elements.toggleBtn) this.elements.toggleBtn.style.display = "flex";
+    if (typeof SessionManager !== "undefined") SessionManager.saveSessionData();
   }
 
   static restoreSavedHeight() {
     if (typeof SessionManager !== "undefined") {
       const savedHeight = SessionManager.getSavedHeight();
-      if (savedHeight) {
-        this.setChatHeight(savedHeight);
-      }
+      if (savedHeight) this.setChatHeight(savedHeight);
     }
   }
 

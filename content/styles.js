@@ -4,13 +4,19 @@ class Styles {
     #sai-panel {
       position: fixed;
       bottom: 52px;
-      right: 22px;
+      right: 2px;
       z-index: 2147483647;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      justify-content: flex-end;
+      pointer-events: auto;
     }
 
+    /* Ask AI button base style + smooth transition for sliding */
     #sai-btn {
       background: linear-gradient(180deg, #0f172a, #0b1220);
       color: #e6f0ff;
@@ -20,11 +26,65 @@ class Styles {
       cursor: pointer;
       font-weight: 600;
       font-size: 14px;
-      transition: transform .12s ease, background .12s ease;
+      transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.4, 1.1), background .12s ease, opacity 0.2s;
       backdrop-filter: blur(6px);
-      opacity: 0.7;
+      opacity: 0.85;
+      will-change: transform;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-    #sai-btn:hover { background: linear-gradient(180deg, #111c3a, #0d162e); opacity: 0.85; }
+    #sai-btn:hover {
+      background: linear-gradient(180deg, #111c3a, #0d162e);
+      opacity: 1;
+    }
+
+    /* HIDDEN STATE: slide out of screen to the right */
+    #sai-btn.sai-btn-hidden {
+      transform: translateX(calc(100% + 28px));
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1), opacity 0.25s;
+    }
+
+    /* TOGGLE BUTTON (always visible) */
+    #sai-toggle-btn {
+      background: linear-gradient(180deg, #0f172a, #0b1220);
+      color: #e6f0ff;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 4px 4px;
+      border-radius: 100px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      backdrop-filter: blur(6px);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      flex-shrink: 0;
+      min-width: 30px;
+      opacity: 0.85;
+
+    }
+    #sai-toggle-btn:hover {
+      background: linear-gradient(180deg, #1a2745, #0f1a30);
+      transform: scale(1.02);
+      border-color: rgba(125,211,252,0.4);
+      color: #7dd3fc;
+    }
+    #sai-toggle-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* toggle button icon animation */
+    #sai-toggle-btn svg {
+      transition: transform 0.2s ease;
+    }
+    #sai-toggle-btn:hover svg {
+      transform: translateX(2px);
+    }
 
     #sai-chat {
       display:flex;
